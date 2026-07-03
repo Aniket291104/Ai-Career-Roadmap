@@ -40,21 +40,25 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:3001',
+  ...(process.env.CLIENT_URI?.split(',').map(url => url.trim()) || []),
 ];
 
-const checkOrigin = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+const checkOrigin = (
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void
+) => {
   if (!origin) {
     return callback(null, true);
   }
-  const clientUrl = process.env.CLIENT_URL;
-  const isVercel = origin.endsWith('.vercel.app') || origin.includes('vercel.app');
-  const isAllowedLocal = allowedOrigins.includes(origin) || /^http:\/\/localhost:\d+$/.test(origin);
-  const isClientUrl = clientUrl && origin === clientUrl;
 
-  if (isVercel || isAllowedLocal || isClientUrl) {
+  const isAllowed =
+    allowedOrigins.includes(origin) ||
+    origin.endsWith('.vercel.app');
+
+  if (isAllowed) {
     callback(null, true);
   } else {
-    callback(null, false);
+    callback(new Error('Not allowed by CORS'));
   }
 };
 
