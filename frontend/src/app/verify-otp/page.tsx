@@ -27,10 +27,12 @@ function VerifyOtpContent() {
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<OtpInput>({
     resolver: zodResolver(otpSchema),
@@ -44,7 +46,14 @@ function VerifyOtpContent() {
       toast.error('Email parameter missing.');
       router.push('/login');
     }
-  }, [searchParams, router]);
+
+    const devOtpParam = searchParams.get('devOtp');
+    if (devOtpParam) {
+      setDevOtp(devOtpParam);
+      setValue('otp', devOtpParam);
+      toast.info(`[Dev Mode] Auto-filled verification code: ${devOtpParam}`);
+    }
+  }, [searchParams, router, setValue]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -57,8 +66,13 @@ function VerifyOtpContent() {
     if (resending || countdown > 0) return;
     setResending(true);
     try {
-      await api.post('/auth/resend-otp', { email });
+      const res = await api.post('/auth/resend-otp', { email });
       toast.success('Verification code re-sent to your email.');
+      if (res.data.devOtp) {
+        setDevOtp(res.data.devOtp);
+        setValue('otp', res.data.devOtp);
+        toast.info(`[Dev Mode] Auto-filled verification code: ${res.data.devOtp}`);
+      }
       setCountdown(60); // 60s cooldown
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to resend OTP. Please try again.');
@@ -100,6 +114,13 @@ function VerifyOtpContent() {
           Enter the 6-digit OTP code dispatched to <span className="text-primary font-bold">{email}</span>
         </p>
       </div>
+
+      {devOtp && (
+        <div className="p-4 mb-5 bg-yellow-500/10 border border-yellow-500/20 text-xs rounded-lg text-yellow-500 font-semibold text-center space-y-1">
+          <p>⚠️ [Dev/Test Mode] OTP bypass enabled:</p>
+          <p className="text-xl font-bold tracking-[8px] text-primary">{devOtp}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>

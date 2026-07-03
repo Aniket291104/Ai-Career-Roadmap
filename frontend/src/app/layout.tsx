@@ -1,4 +1,4 @@
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { GoogleAuthProvider } from "@/components/google-auth-provider";
 import type { Metadata } from "next";
 import { DM_Sans, Roboto } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -46,9 +46,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${roboto.variable} antialiased bg-background text-foreground`}
       >
-        <GoogleOAuthProvider
-          clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}
-        >
+        <GoogleAuthProvider>
           <QueryProvider>
             <ThemeProvider
               attribute="class"
@@ -68,7 +66,7 @@ export default function RootLayout({
               />
             </ThemeProvider>
           </QueryProvider>
-        </GoogleOAuthProvider>
+        </GoogleAuthProvider>
       </body>
     </html>
   );

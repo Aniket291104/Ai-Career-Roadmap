@@ -12,6 +12,7 @@ router.post('/logout', AuthController.logout);
 router.post('/forgot-password', AuthController.forgotPassword);
 router.post('/reset-password', AuthController.resetPassword);
 router.post('/google', AuthController.googleLogin);
+router.get('/google-client-id', AuthController.getGoogleClientId);
 
 // Protected profile routes
 router.get('/me', authenticateJWT as any, AuthController.getCurrentUser as any);

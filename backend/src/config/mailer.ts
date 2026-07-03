@@ -1,15 +1,21 @@
 import nodemailer from 'nodemailer';
 
+const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+const isSecure = process.env.SMTP_SECURE === "true" || smtpPort === 465;
+
 const transporter = nodemailer.createTransport({
-  pool: true,
-  host: process.env.SMTP_HOST || 'localhost',
-  port: parseInt(process.env.SMTP_PORT || '1025', 10),
-  secure: process.env.SMTP_PORT === '465',
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: smtpPort,
+  secure: isSecure,
   auth: {
-    user: process.env.SMTP_USER || 'test_user',
-    pass: process.env.SMTP_PASS || 'test_pass',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 });
+
 transporter.verify((error, success) => {
   if (error) {
     console.error("SMTP Verify Error:", error);

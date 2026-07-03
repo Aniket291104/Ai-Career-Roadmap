@@ -19,6 +19,7 @@ type ForgotInput = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [devResetLink, setDevResetLink] = useState<string | null>(null);
 
   const {
     register,
@@ -31,8 +32,11 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data: ForgotInput) => {
     setSubmitting(true);
     try {
-      await api.post('/auth/forgot-password', data);
+      const res = await api.post('/auth/forgot-password', data);
       toast.success('Reset link dispatched if the account exists.');
+      if (res.data.devResetLink) {
+        setDevResetLink(res.data.devResetLink);
+      }
       setSuccess(true);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Something went wrong.');
@@ -60,6 +64,14 @@ export default function ForgotPasswordPage() {
             <div className="p-4 bg-primary/10 border border-primary/20 text-sm rounded-lg text-primary font-semibold">
               If an account with that email exists, we have dispatched a password reset link. Please check your inbox.
             </div>
+            {devResetLink && (
+              <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 text-xs rounded-lg text-yellow-500 font-semibold text-left space-y-2">
+                <p>⚠️ [Dev/Test Mode] SMTP bypass enabled:</p>
+                <Link href={devResetLink} className="text-primary hover:underline font-bold break-all block">
+                  {devResetLink}
+                </Link>
+              </div>
+            )}
             <Link href="/login" className="block w-full py-3 bg-secondary text-center text-sm font-semibold rounded-lg hover:bg-secondary/85 transition-all">
               Back to Sign In
             </Link>

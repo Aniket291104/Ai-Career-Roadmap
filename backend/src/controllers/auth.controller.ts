@@ -72,8 +72,11 @@ export class AuthController {
         html: emailHtml,
       }).catch((err) => console.error('Error sending registration email async:', err));
 
+      const devOtp = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? otp : undefined;
+
       res.status(201).json({
         message: 'Registration successful. OTP sent to email.',
+        devOtp,
         user: {
           id: user._id,
           name: user.name,
@@ -204,7 +207,12 @@ export class AuthController {
         html: emailHtml,
       }).catch((err) => console.error('Error sending resend OTP email async:', err));
 
-      res.status(200).json({ message: 'OTP code re-sent to your email successfully.' });
+      const devOtp = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? otp : undefined;
+
+      res.status(200).json({
+        message: 'OTP code re-sent to your email successfully.',
+        devOtp,
+      });
     } catch (error) {
       console.error('Resend OTP Error:', error);
       res.status(500).json({ message: 'Internal Server Error' });
@@ -249,10 +257,13 @@ export class AuthController {
         sendEmail({ to: user.email, subject: 'Verify Your Account', html: emailHtml })
           .catch((err) => console.error('Error sending login OTP email async:', err));
 
+      const devOtp = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? otp : undefined;
+
         res.status(200).json({
           status: 'verify_otp',
           message: 'Account is unverified. OTP code re-sent to your email.',
           email: user.email,
+          devOtp,
         });
         return;
       }
@@ -328,8 +339,11 @@ export class AuthController {
         html: emailHtml,
       }).catch((err) => console.error('Error sending forgot password email async:', err));
 
+      const devResetLink = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? resetLink : undefined;
+
       res.status(200).json({
         message: 'If email exists, a password reset link has been dispatched.',
+        devResetLink,
       });
     } catch (error) {
       console.error('Forgot Password Error:', error);
@@ -487,6 +501,16 @@ export class AuthController {
       res.status(200).json({ message: 'Profile updated successfully', user });
     } catch (error) {
       console.error('Update Profile Error:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+
+  static async getGoogleClientId(req: Request, res: Response): Promise<void> {
+    try {
+      const clientId = process.env.GOOGLE_CLIENT_ID || "";
+      res.status(200).json({ clientId });
+    } catch (error) {
+      console.error('Get Google Client ID Error:', error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   }
