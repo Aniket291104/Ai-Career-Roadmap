@@ -37,9 +37,6 @@ const server = http.createServer(app);
 
 // Helper for dynamic CORS checking
 const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://localhost:3001',
   'https://roadmapai.online',
   'https://www.roadmapai.online',
   'https://career-roadmap-generator-flax.vercel.app',
