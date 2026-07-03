@@ -46,15 +46,23 @@ const checkOrigin = (origin: string | undefined, callback: (err: Error | null, a
   if (!origin) {
     return callback(null, true);
   }
-  const clientUrl = process.env.CLIENT_URL;
-  const isVercel = origin.endsWith('.vercel.app') || origin.includes('vercel.app');
-  const isAllowedLocal = allowedOrigins.includes(origin) || /^http:\/\/localhost:\d+$/.test(origin);
-  const isClientUrl = clientUrl && origin === clientUrl;
+  const clientUrls = (process.env.CLIENT_URL || "")
+    .split(",")
+    .map(url => url.trim());
+
+  const isVercel =
+    origin.endsWith(".vercel.app") || origin.includes("vercel.app");
+
+  const isAllowedLocal =
+    allowedOrigins.includes(origin) ||
+    /^http:\/\/localhost:\d+$/.test(origin);
+
+  const isClientUrl = clientUrls.includes(origin);
 
   if (isVercel || isAllowedLocal || isClientUrl) {
     callback(null, true);
   } else {
-    callback(null, false);
+    callback(new Error("Not allowed by CORS"));
   }
 };
 
@@ -126,7 +134,7 @@ app.use('/api/coding', codingRoutes);
 // Socket.io event handling
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
-  
+
   socket.on('join', (userId: string) => {
     socket.join(userId);
     console.log(`User ${userId} joined room`);
@@ -153,14 +161,14 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   await connectDB();
-  
+
   try {
     await redis.connect();
     console.log('Redis Connected');
   } catch (err) {
     console.warn('Failed to connect to Redis. Continuing without caching.', err);
   }
-  
+
   server.listen(PORT, () => {
     console.log(`Server listening on port ${PORT} in ${process.env.NODE_ENV} mode.`);
   });
