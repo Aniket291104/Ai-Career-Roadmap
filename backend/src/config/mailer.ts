@@ -10,7 +10,13 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS || 'test_pass',
   },
 });
-
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("SMTP Verify Error:", error);
+  } else {
+    console.log("SMTP Server Ready");
+  }
+});
 export const sendEmail = async ({
   to,
   subject,
@@ -24,7 +30,7 @@ export const sendEmail = async ({
     console.log('\n==================================================');
     console.log(`[DEV EMAIL] Sending email to: ${to}`);
     console.log(`Subject: ${subject}`);
-    
+
     // Attempt to extract 6-digit OTP
     const otpMatch = html.match(/\b(\d{6})\b/);
     if (otpMatch) {
@@ -49,7 +55,7 @@ export const sendEmail = async ({
     console.log(`Email sent successfully: ${info.messageId}`);
   } catch (error) {
     console.error(`Error sending email: ${(error as Error).message}`);
-    
+
     // Log the OTP fallback to console in case of failure so deployment testing is possible
     const otpMatch = html.match(/\b(\d{6})\b/);
     if (otpMatch) {
