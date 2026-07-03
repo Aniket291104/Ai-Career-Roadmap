@@ -8,7 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
-import { Sparkles, Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -52,10 +53,8 @@ export default function RegisterPage() {
 
       <div className="w-full max-w-md glass-card rounded-2xl p-8 relative shadow-2xl">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
-              <Sparkles className="w-4 h-4" />
-            </div>
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
+            <Logo className="w-9 h-9" />
             <span className="font-extrabold text-lg">Roadmap.AI</span>
           </Link>
           <h2 className="text-2xl font-bold tracking-tight">Create Account</h2>

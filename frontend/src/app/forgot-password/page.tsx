@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
-import { Sparkles, Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2 } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -46,10 +47,8 @@ export default function ForgotPasswordPage() {
 
       <div className="w-full max-w-md glass-card rounded-2xl p-8 relative shadow-2xl">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
-              <Sparkles className="w-4 h-4" />
-            </div>
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
+            <Logo className="w-9 h-9" />
             <span className="font-extrabold text-lg">Roadmap.AI</span>
           </Link>
           <h2 className="text-2xl font-bold tracking-tight">Recover Password</h2>

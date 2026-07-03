@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, Mic, MicOff, Maximize2, Minimize2, Sparkles, BookOpen, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { Logo } from '@/components/logo';
 
 interface Message {
   id: string;
@@ -158,7 +159,7 @@ export function FloatingAIAssistant() {
             {/* Animated Pulsing Ring */}
             <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping opacity-75 pointer-events-none" />
 
-            <MessageSquare className="w-6 h-6" />
+            <Logo className="w-7 h-7" />
             
             {/* Notification Badge */}
             <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />

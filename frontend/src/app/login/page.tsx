@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useUserStore } from '@/store/user-store';
-import { Sparkles, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -84,10 +85,8 @@ export default function LoginPage() {
         
         {/* Brand */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
-              <Sparkles className="w-4 h-4" />
-            </div>
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
+            <Logo className="w-9 h-9" />
             <span className="font-extrabold text-lg">Roadmap.AI</span>
           </Link>
           <h2 className="text-2xl font-bold tracking-tight">Welcome Back</h2>

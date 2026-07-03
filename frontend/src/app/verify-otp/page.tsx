@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useUserStore } from '@/store/user-store';
-import { Sparkles, Key, Loader2 } from 'lucide-react';
+import { Key, Loader2 } from 'lucide-react';
+import { Logo } from '@/components/logo';
 
 const otpSchema = z.object({
   otp: z.string().length(6, 'Verification code must be exactly 6 digits'),
@@ -90,10 +91,8 @@ function VerifyOtpContent() {
   return (
     <div className="w-full max-w-md glass-card rounded-2xl p-8 relative shadow-2xl">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white">
-            <Sparkles className="w-4 h-4" />
-          </div>
+        <div className="inline-flex items-center gap-2.5 mb-4">
+          <Logo className="w-9 h-9" />
           <span className="font-extrabold text-lg">Roadmap.AI</span>
         </div>
         <h2 className="text-2xl font-bold tracking-tight">Verify Your Email</h2>
