@@ -39,7 +39,7 @@ export default function RegisterPage() {
       toast.success(res.data.message);
       router.push(`/verify-otp?email=${encodeURIComponent(data.email)}`);
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.warn('Registration error:', error.message || error);
       const errMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Registration failed. Try again.';
       toast.error(errMsg);
     } finally {

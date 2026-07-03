@@ -50,7 +50,7 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.warn('Login error:', error.message || error);
       const errMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Invalid email or password.';
       toast.error(errMsg);
     } finally {
