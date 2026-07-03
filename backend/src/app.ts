@@ -46,23 +46,15 @@ const checkOrigin = (origin: string | undefined, callback: (err: Error | null, a
   if (!origin) {
     return callback(null, true);
   }
-  const clientUrls = (process.env.CLIENT_URL || "")
-    .split(",")
-    .map(url => url.trim());
-
-  const isVercel =
-    origin.endsWith(".vercel.app") || origin.includes("vercel.app");
-
-  const isAllowedLocal =
-    allowedOrigins.includes(origin) ||
-    /^http:\/\/localhost:\d+$/.test(origin);
-
-  const isClientUrl = clientUrls.includes(origin);
+  const clientUrl = process.env.CLIENT_URL;
+  const isVercel = origin.endsWith('.vercel.app') || origin.includes('vercel.app');
+  const isAllowedLocal = allowedOrigins.includes(origin) || /^http:\/\/localhost:\d+$/.test(origin);
+  const isClientUrl = clientUrl && origin === clientUrl;
 
   if (isVercel || isAllowedLocal || isClientUrl) {
     callback(null, true);
   } else {
-    callback(new Error("Not allowed by CORS"));
+    callback(null, false);
   }
 };
 
