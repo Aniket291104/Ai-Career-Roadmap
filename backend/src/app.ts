@@ -40,26 +40,28 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:3001',
-  ...(process.env.CLIENT_URI?.split(',').map(url => url.trim()) || []),
+  'https://roadmapai.online',
+  'https://www.roadmapai.online',
+  'https://career-roadmap-generator-flax.vercel.app',
 ];
 
 const checkOrigin = (
   origin: string | undefined,
   callback: (err: Error | null, allow?: boolean) => void
 ) => {
+  console.log('Incoming Origin:', origin);
+
   if (!origin) {
     return callback(null, true);
   }
 
-  const isAllowed =
-    allowedOrigins.includes(origin) ||
-    origin.endsWith('.vercel.app');
-
-  if (isAllowed) {
-    callback(null, true);
-  } else {
-    callback(new Error('Not allowed by CORS'));
+  if (allowedOrigins.includes(origin)) {
+    return callback(null, true);
   }
+
+  console.log('Blocked Origin:', origin);
+
+  return callback(new Error('Not allowed by CORS'));
 };
 
 // Socket.io initialization
