@@ -37,11 +37,11 @@ export default function RegisterPage() {
     try {
       const res = await api.post('/auth/register', data);
       toast.success(res.data.message);
-      // Route to verification with email query and devOtp fallback
-      const devOtpParam = res.data.devOtp ? `&devOtp=${res.data.devOtp}` : '';
-      router.push(`/verify-otp?email=${encodeURIComponent(data.email)}${devOtpParam}`);
+      router.push(`/verify-otp?email=${encodeURIComponent(data.email)}`);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed. Try again.');
+      console.error('Registration error:', error);
+      const errMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Registration failed. Try again.';
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }

@@ -63,8 +63,7 @@ export default function LoginPage() {
 
       if (res.data.status === 'verify_otp') {
         toast.info(res.data.message);
-        const devOtpParam = res.data.devOtp ? `&devOtp=${res.data.devOtp}` : '';
-        router.push(`/verify-otp?email=${encodeURIComponent(res.data.email)}${devOtpParam}`);
+        router.push(`/verify-otp?email=${encodeURIComponent(res.data.email)}`);
       } else {
         if (typeof window !== 'undefined') {
           if (res.data.accessToken) localStorage.setItem('accessToken', res.data.accessToken);
@@ -75,7 +74,9 @@ export default function LoginPage() {
         router.push('/dashboard');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Invalid email or password.');
+      console.error('Login error:', error);
+      const errMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Invalid email or password.';
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }
