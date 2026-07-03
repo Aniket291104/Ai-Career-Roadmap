@@ -66,17 +66,20 @@ export class AuthController {
         </div>
       `;
       
-      sendEmail({
-        to: email,
-        subject: 'Verify Your AI Career Roadmap Account',
-        html: emailHtml,
-      }).catch((err) => console.error('Error sending registration email async:', err));
-
-      const devOtp = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? otp : undefined;
+      try {
+        await sendEmail({
+          to: email,
+          subject: 'Verify Your AI Career Roadmap Account',
+          html: emailHtml,
+        });
+      } catch (emailErr: any) {
+        await User.findByIdAndDelete(user._id);
+        res.status(500).json({ message: `Failed to send verification email: ${emailErr.message || emailErr}` });
+        return;
+      }
 
       res.status(201).json({
         message: 'Registration successful. OTP sent to email.',
-        devOtp,
         user: {
           id: user._id,
           name: user.name,
@@ -201,17 +204,19 @@ export class AuthController {
         </div>
       `;
 
-      sendEmail({
-        to: email,
-        subject: 'Resend Verification Code: AI Career Roadmap',
-        html: emailHtml,
-      }).catch((err) => console.error('Error sending resend OTP email async:', err));
-
-      const devOtp = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? otp : undefined;
+      try {
+        await sendEmail({
+          to: email,
+          subject: 'Resend Verification Code: AI Career Roadmap',
+          html: emailHtml,
+        });
+      } catch (emailErr: any) {
+        res.status(500).json({ message: `Failed to send verification email: ${emailErr.message || emailErr}` });
+        return;
+      }
 
       res.status(200).json({
         message: 'OTP code re-sent to your email successfully.',
-        devOtp,
       });
     } catch (error) {
       console.error('Resend OTP Error:', error);
@@ -254,16 +259,17 @@ export class AuthController {
         await user.save();
 
         const emailHtml = `<h3>Please verify your email</h3><p>Your verification code is: <b>${otp}</b></p>`;
-        sendEmail({ to: user.email, subject: 'Verify Your Account', html: emailHtml })
-          .catch((err) => console.error('Error sending login OTP email async:', err));
-
-      const devOtp = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? otp : undefined;
+        try {
+          await sendEmail({ to: user.email, subject: 'Verify Your Account', html: emailHtml });
+        } catch (emailErr: any) {
+          res.status(500).json({ message: `Failed to send verification email: ${emailErr.message || emailErr}` });
+          return;
+        }
 
         res.status(200).json({
           status: 'verify_otp',
           message: 'Account is unverified. OTP code re-sent to your email.',
           email: user.email,
-          devOtp,
         });
         return;
       }
@@ -333,17 +339,19 @@ export class AuthController {
         <p>This link will expire in 1 hour.</p>
       `;
 
-      sendEmail({
-        to: email,
-        subject: 'Reset Password: AI Career Roadmap',
-        html: emailHtml,
-      }).catch((err) => console.error('Error sending forgot password email async:', err));
-
-      const devResetLink = (process.env.ALLOW_DEV_OTP === 'true' || process.env.NODE_ENV !== 'production') ? resetLink : undefined;
+      try {
+        await sendEmail({
+          to: email,
+          subject: 'Reset Password: AI Career Roadmap',
+          html: emailHtml,
+        });
+      } catch (emailErr: any) {
+        res.status(500).json({ message: `Failed to send password reset email: ${emailErr.message || emailErr}` });
+        return;
+      }
 
       res.status(200).json({
         message: 'If email exists, a password reset link has been dispatched.',
-        devResetLink,
       });
     } catch (error) {
       console.error('Forgot Password Error:', error);

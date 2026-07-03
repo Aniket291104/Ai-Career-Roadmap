@@ -70,5 +70,6 @@ export const sendEmail = async ({
       console.warn(`Fallback OTP code: ${otpMatch[1]}`);
       console.warn(`==================================================\n`);
     }
+    throw error;
   }
 };
