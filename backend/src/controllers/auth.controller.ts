@@ -406,21 +406,15 @@ export class AuthController {
       let name = '';
       let sub = '';
 
-      if (credential === 'mock_google_token') {
-        email = 'mockuser@gmail.com';
-        name = 'Mock Google User';
-        sub = '1234567890';
-      } else {
-        // Validate Token with Google API
-        try {
-          const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-          email = googleRes.data.email;
-          name = googleRes.data.name;
-          sub = googleRes.data.sub;
-        } catch (err) {
-          res.status(400).json({ message: 'Invalid Google OAuth credential token.' });
-          return;
-        }
+      // Validate Token with Google API
+      try {
+        const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
+        email = googleRes.data.email;
+        name = googleRes.data.name;
+        sub = googleRes.data.sub;
+      } catch (err) {
+        res.status(400).json({ message: 'Invalid Google OAuth credential token.' });
+        return;
       }
 
       let user = await User.findOne({ email });
