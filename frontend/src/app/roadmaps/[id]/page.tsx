@@ -353,25 +353,46 @@ export default function RoadmapDetailPage({ params }: { params: Promise<{ id: st
 
                                   {task.links && task.links.length > 0 ? (
                                     <div className="mt-2.5 flex flex-wrap gap-1.5">
-                                      {task.links.map((link, lIdx) => (
-                                        <a
-                                          key={lIdx}
-                                          href={link.url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 border border-primary/25 hover:bg-primary/20 text-[9px] font-bold text-primary transition-all active:scale-95 cursor-pointer shrink-0"
-                                        >
-                                          {link.type === 'youtube' ? (
-                                            <Video className="w-3 h-3 text-red-500 shrink-0" />
-                                          ) : link.type === 'notes' ? (
-                                            <FileText className="w-3 h-3 text-yellow-500 shrink-0" />
-                                          ) : (
-                                            <ExternalLink className="w-3 h-3 shrink-0" />
-                                          )}
-                                          <span>{link.title}</span>
-                                        </a>
-                                      ))}
+                                      {task.links.map((link, lIdx) => {
+                                        // Resolve URL safely to prevent dead links
+                                        let resolvedUrl = link.url;
+                                        const isYoutube = link.type === 'youtube' || resolvedUrl.includes('youtube.com') || resolvedUrl.includes('youtu.be');
+                                        
+                                        if (isYoutube) {
+                                          resolvedUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(link.title)}`;
+                                        } else {
+                                          // For docs or notes, if it's a deep link, redirect to Google Search for the topic to prevent 404s
+                                          try {
+                                            const parsed = new URL(resolvedUrl);
+                                            const isRoot = parsed.pathname === '/' || parsed.pathname === '';
+                                            if (!isRoot) {
+                                              resolvedUrl = `https://www.google.com/search?q=${encodeURIComponent(link.title)}`;
+                                            }
+                                          } catch {
+                                            resolvedUrl = `https://www.google.com/search?q=${encodeURIComponent(link.title)}`;
+                                          }
+                                        }
+
+                                        return (
+                                          <a
+                                            key={lIdx}
+                                            href={resolvedUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 border border-primary/25 hover:bg-primary/20 text-[9px] font-bold text-primary transition-all active:scale-95 cursor-pointer shrink-0"
+                                          >
+                                            {isYoutube ? (
+                                              <Video className="w-3 h-3 text-red-500 shrink-0" />
+                                            ) : link.type === 'notes' ? (
+                                              <FileText className="w-3 h-3 text-yellow-500 shrink-0" />
+                                            ) : (
+                                              <ExternalLink className="w-3 h-3 shrink-0" />
+                                            )}
+                                            <span>{link.title}</span>
+                                          </a>
+                                        );
+                                      })}
                                     </div>
                                   ) : (
                                     <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -414,20 +435,45 @@ export default function RoadmapDetailPage({ params }: { params: Promise<{ id: st
                               <BookOpen className="w-3.5 h-3.5 text-accent" />
                               <span>Study Guides (Week Resources)</span>
                             </span>
-
+ 
                             <div className="space-y-2 text-xs font-semibold">
-                              {week.resources.map((resItem, rIdx) => (
-                                <a
-                                  key={rIdx}
-                                  href={resItem.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex items-center justify-between p-2.5 rounded border border-border/40 hover:bg-muted/40 transition-colors"
-                                >
-                                  <span className="truncate pr-2">{resItem.title}</span>
-                                  {resItem.type === 'youtube' ? <Video className="w-3.5 h-3.5 text-red-500 shrink-0" /> : resItem.type === 'notes' ? <FileText className="w-3.5 h-3.5 text-yellow-500 shrink-0" /> : <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-                                </a>
-                              ))}
+                              {week.resources.map((resItem, rIdx) => {
+                                let resolvedResUrl = resItem.url;
+                                const isYoutube = resItem.type === 'youtube' || resolvedResUrl.includes('youtube.com') || resolvedResUrl.includes('youtu.be');
+
+                                if (isYoutube) {
+                                  resolvedResUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(resItem.title)}`;
+                                } else {
+                                  try {
+                                    const parsed = new URL(resolvedResUrl);
+                                    const isRoot = parsed.pathname === '/' || parsed.pathname === '';
+                                    if (!isRoot) {
+                                      resolvedResUrl = `https://www.google.com/search?q=${encodeURIComponent(resItem.title)}`;
+                                    }
+                                  } catch {
+                                    resolvedResUrl = `https://www.google.com/search?q=${encodeURIComponent(resItem.title)}`;
+                                  }
+                                }
+
+                                return (
+                                  <a
+                                    key={rIdx}
+                                    href={resolvedResUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center justify-between p-2.5 rounded border border-border/40 hover:bg-muted/40 transition-colors"
+                                  >
+                                    <span className="truncate pr-2">{resItem.title}</span>
+                                    {isYoutube ? (
+                                      <Video className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                    ) : resItem.type === 'notes' ? (
+                                      <FileText className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+                                    ) : (
+                                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                    )}
+                                  </a>
+                                );
+                              })}
                             </div>
                           </div>
                         )}

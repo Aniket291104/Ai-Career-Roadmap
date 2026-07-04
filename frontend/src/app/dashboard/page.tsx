@@ -104,13 +104,8 @@ export default function DashboardPage() {
     { id: 'feed', title: 'Live Activity Feed', visible: true, size: 'sm' },
   ]);
 
-  // Live Activity Feed State
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([
-    { id: 'f1', user: 'Aniket Kumar', action: 'completed MongoDB configuration task', time: 'Just now', icon: '✅', color: 'text-green-400' },
-    { id: 'f2', user: 'Rohan Sharma', action: 'unlocked badge "Consistency King"', time: '2m ago', icon: '👑', color: 'text-yellow-400' },
-    { id: 'f3', user: 'Sanya Gupta', action: 'gained +100 XP in Mock Interview', time: '5m ago', icon: '⚡', color: 'text-indigo-400' },
-    { id: 'f4', user: 'Vikram Adithya', action: 'reached Level 4', time: '10m ago', icon: '🏆', color: 'text-purple-400' },
-  ]);
+  // Real activity feed from backend
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
 
   // Load stats and layout preference
   useEffect(() => {
@@ -118,6 +113,50 @@ export default function DashboardPage() {
       try {
         const res = await api.get('/analytics/dashboard');
         setData(res.data);
+
+        // Build real activity feed from user's own data
+        const realFeed: FeedItem[] = [];
+        if (res.data?.activeRoadmap) {
+          realFeed.push({
+            id: 'r1',
+            user: res.data.user?.name || 'You',
+            action: `active roadmap: ${res.data.activeRoadmap.title}`,
+            time: 'Active',
+            icon: '🗺️',
+            color: 'text-primary',
+          });
+        }
+        if (res.data?.tasksInfo?.completed > 0) {
+          realFeed.push({
+            id: 'r2',
+            user: res.data.user?.name || 'You',
+            action: `completed ${res.data.tasksInfo.completed} tasks so far`,
+            time: 'Total',
+            icon: '✅',
+            color: 'text-green-400',
+          });
+        }
+        if (res.data?.user?.currentStreak > 0) {
+          realFeed.push({
+            id: 'r3',
+            user: res.data.user?.name || 'You',
+            action: `on a ${res.data.user.currentStreak}-day learning streak 🔥`,
+            time: 'Streak',
+            icon: '🔥',
+            color: 'text-orange-400',
+          });
+        }
+        if (res.data?.user?.xpPoints > 0) {
+          realFeed.push({
+            id: 'r4',
+            user: res.data.user?.name || 'You',
+            action: `earned ${res.data.user.xpPoints} XP points total`,
+            time: 'XP',
+            icon: '⚡',
+            color: 'text-yellow-400',
+          });
+        }
+        if (realFeed.length > 0) setFeedItems(realFeed);
       } catch (err) {
         toast.error('Failed to load dashboard metrics.');
       } finally {
@@ -135,39 +174,6 @@ export default function DashboardPage() {
     }
 
     fetchStats();
-  }, []);
-
-  // Trigger occasional mock updates for the feed to make it feel "live"
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const users = ['Aarav Patel', 'Neha Singh', 'Ishaan Verma', 'Priya Das', 'Amit Trivedi'];
-      const actions = [
-        'completed React routing task',
-        'solved a Hard LeetCode problem',
-        'generated notes for Cloud Architecture',
-        'gained +15 XP',
-        'unlocked "Node Hero" badge',
-        'scored 95% in SQL Assessment',
-      ];
-      const icons = ['🔥', '💻', '📝', '⚡', '🤖', '🎯'];
-      const colors = ['text-orange-400', 'text-blue-400', 'text-teal-400', 'text-yellow-400', 'text-purple-400', 'text-pink-400'];
-
-      const randomIdx = Math.floor(Math.random() * users.length);
-      const randomAction = Math.floor(Math.random() * actions.length);
-
-      const newItem: FeedItem = {
-        id: Math.random().toString(),
-        user: users[randomIdx],
-        action: actions[randomAction],
-        time: 'Just now',
-        icon: icons[randomAction],
-        color: colors[randomAction],
-      };
-
-      setFeedItems((prev) => [newItem, ...prev.slice(0, 5)]);
-    }, 18000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const saveLayout = (newLayout: Widget[]) => {
@@ -603,38 +609,45 @@ export default function DashboardPage() {
                     <div>
                       <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
                         <Activity className="w-5 h-5 text-primary" />
-                        <span>Live Activity Feed</span>
+                        <span>Your Activity</span>
                       </h3>
-                      
-                      <div className="space-y-3">
-                        <AnimatePresence initial={false}>
-                          {feedItems.map((item) => (
-                            <motion.div
-                              key={item.id}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, scale: 0.9 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-start gap-2.5 p-2 rounded-lg border border-border/30 bg-muted/5 text-[10px] font-semibold"
-                            >
-                              <span className="text-sm shrink-0">{item.icon}</span>
-                              <div className="min-w-0 flex-1">
-                                <span className="text-foreground font-bold block truncate">{item.user}</span>
-                                <span className="text-muted-foreground font-medium">{item.action}</span>
-                              </div>
-                              <span className="text-[8px] text-muted-foreground/60 shrink-0 mt-0.5">{item.time}</span>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </div>
+
+                      {feedItems.length > 0 ? (
+                        <div className="space-y-3">
+                          <AnimatePresence initial={false}>
+                            {feedItems.map((item) => (
+                              <motion.div
+                                key={item.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-start gap-2.5 p-2 rounded-lg border border-border/30 bg-muted/5 text-[10px] font-semibold"
+                              >
+                                <span className="text-sm shrink-0">{item.icon}</span>
+                                <div className="min-w-0 flex-1">
+                                  <span className={`font-bold block truncate ${item.color}`}>{item.user}</span>
+                                  <span className="text-muted-foreground font-medium">{item.action}</span>
+                                </div>
+                                <span className="text-[8px] text-muted-foreground/60 shrink-0 mt-0.5">{item.time}</span>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-center gap-2">
+                          <ArrowUpRight className="w-8 h-8 text-muted-foreground/30" />
+                          <p className="text-xs text-muted-foreground font-semibold">No activity yet.<br />Complete tasks or generate a roadmap to get started.</p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between text-[9px] font-extrabold text-muted-foreground border-t border-border/30 pt-3 mt-4">
                       <span className="flex items-center gap-1">
                         <Users className="w-3.5 h-3.5" />
-                        <span>5 Active Users Online</span>
+                        <span>Your recent milestones</span>
                       </span>
-                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
                     </div>
                   </div>
                 )}
@@ -643,34 +656,7 @@ export default function DashboardPage() {
           })}
         </motion.div>
 
-        {/* MOCK ACTIONS PANEL FOR QUICK XP OR CONFETTI TESTING */}
-        <div className="p-6 rounded-2xl glass-card flex flex-wrap gap-4 items-center justify-between">
-          <div>
-            <h4 className="font-bold text-sm">Interactive Sandbox</h4>
-            <p className="text-xs text-muted-foreground">Test celebrations, sound synthesizer, and achievement overlays.</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={triggerTaskCompleted}
-              className="px-4 py-2 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <span>Simulate Task Completed</span>
-            </button>
-            <button
-              onClick={() => triggerLevelUp(3)}
-              className="px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Simulate Level Up!</span>
-            </button>
-            <button
-              onClick={() => triggerConfetti()}
-              className="px-4 py-2 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-            >
-              <span>Trigger Confetti</span>
-            </button>
-          </div>
-        </div>
+
 
       </div>
     </DashboardLayout>

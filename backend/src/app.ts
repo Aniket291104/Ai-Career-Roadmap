@@ -40,6 +40,9 @@ const allowedOrigins = [
   'https://roadmapai.online',
   'https://www.roadmapai.online',
   'https://career-roadmap-generator-flax.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
 ];
 
 const checkOrigin = (

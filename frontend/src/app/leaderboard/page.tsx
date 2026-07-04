@@ -23,8 +23,6 @@ interface LeaderboardUser {
   xpPoints: number;
   currentStreak: number;
   role: string;
-  weeklyXp?: number;
-  badgesCount?: number;
 }
 
 export default function LeaderboardPage() {
@@ -38,13 +36,7 @@ export default function LeaderboardPage() {
       setLoading(true);
       try {
         const res = await api.get('/analytics/leaderboard');
-        // Add mock stats for detailed gamification (weekly Xp, badge count)
-        const enriched = res.data.leaderboard.map((user: LeaderboardUser, idx: number) => ({
-          ...user,
-          weeklyXp: Math.floor(user.xpPoints * (0.4 + Math.random() * 0.4)),
-          badgesCount: Math.max(3 - Math.floor(idx / 2), 1),
-        }));
-        setLeaders(enriched);
+        setLeaders(res.data.leaderboard);
       } catch (err) {
         toast.error('Failed to load leaderboard data.');
       } finally {
@@ -158,7 +150,7 @@ export default function LeaderboardPage() {
                           {item.rank}
                         </span>
                         <span className="text-[10px] font-bold text-foreground mt-1.5">
-                          {filterTime === 'weekly' ? itemUser.weeklyXp : itemUser.xpPoints} XP
+                          {itemUser.xpPoints} XP
                         </span>
                         <span className="text-[8px] text-orange-400 font-extrabold flex items-center gap-0.5 mt-1">
                           <Flame className="w-2.5 h-2.5 fill-orange-400/10" />
@@ -189,7 +181,6 @@ export default function LeaderboardPage() {
                 <div className="divide-y divide-border/20">
                   {remaining.map((leader, index) => {
                     const actualRank = index + 4;
-                    const valueToShow = filterTime === 'weekly' ? leader.weeklyXp : leader.xpPoints;
                     
                     return (
                       <motion.div
@@ -223,15 +214,14 @@ export default function LeaderboardPage() {
                             <span>{leader.currentStreak}d</span>
                           </div>
 
-                          {/* Badges */}
+                          {/* Badges — shows streak-based icon */}
                           <div className="flex items-center gap-0.5 text-xs text-yellow-500 font-bold w-12 justify-end">
-                            <span>✨</span>
-                            <span>{leader.badgesCount}</span>
+                            <span>🔥</span>
                           </div>
 
                           {/* XP */}
                           <span className="text-xs font-extrabold text-primary w-20 justify-end flex">
-                            {valueToShow} XP
+                            {leader.xpPoints} XP
                           </span>
                         </div>
                       </motion.div>

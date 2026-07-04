@@ -14,22 +14,16 @@ import {
   Loader2,
   Send,
   Award,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
   Play,
   Clock,
   Sparkles,
   Building,
   Sliders,
-  AlertCircle,
   Volume2,
   Activity,
-  Smile,
-  Heart,
   Eye,
   Terminal,
-  Code2,
+  Heart,
   FileCheck,
   RotateCcw,
   Zap
@@ -106,11 +100,7 @@ export default function MockInterviewPage() {
   // TTS Voice Synthesis reading questions aloud
   const [ttsEnabled, setTtsEnabled] = useState(true);
 
-  // Visual metrics simulation intervals
-  const [eyeContactRating, setEyeContactRating] = useState(90);
-  const [attentionRating, setAttentionRating] = useState(95);
-  const [stressIndex, setStressIndex] = useState(18);
-  const [speakingSpeed, setSpeakingSpeed] = useState(130);
+  // No simulated metrics — real scores come from AI evaluation in session.liveMetrics
 
   // Countdown timer clock
   const [timeLeft, setTimeLeft] = useState(0);
@@ -149,18 +139,7 @@ export default function MockInterviewPage() {
     }
   }, [timeLeft, step]);
 
-  // Visual metrics simulation loop
-  useEffect(() => {
-    if (step === 'active') {
-      const interval = setInterval(() => {
-        setEyeContactRating((prev) => Math.min(100, Math.max(70, prev + (Math.random() - 0.5) * 5)));
-        setAttentionRating((prev) => Math.min(100, Math.max(75, prev + (Math.random() - 0.5) * 4)));
-        setStressIndex((prev) => Math.min(100, Math.max(10, prev + (Math.random() - 0.5) * 6)));
-        setSpeakingSpeed((prev) => Math.min(200, Math.max(90, prev + (Math.random() - 0.5) * 10)));
-      }, 4000);
-      return () => clearInterval(interval);
-    }
-  }, [step]);
+  // No simulation loops — metrics are evaluated by AI at interview end
 
   // Request Camera & Mic streams
   const requestHardwarePermissions = async () => {
@@ -262,11 +241,6 @@ export default function MockInterviewPage() {
         sessionId: session._id,
         answerText: textToSend,
         submittedCode: session.currentRound === 'coding' ? editorCode : undefined,
-        liveMetrics: {
-          eyeContact: Math.floor(eyeContactRating),
-          speakingSpeed: Math.floor(speakingSpeed),
-          stressLevel: Math.floor(stressIndex),
-        },
       });
 
       const updatedSession = res.data.session;
@@ -620,17 +594,15 @@ export default function MockInterviewPage() {
                 </p>
               </div>
 
-              {/* Live Webcam & Attention Metrics Box */}
+              {/* Live Webcam Feed */}
               <div className="p-6 rounded-2xl glass-card border border-border space-y-4">
-                
                 <div className="flex justify-between items-center text-xs font-bold text-muted-foreground">
                   <span>Candidate Feed Preview</span>
                   <span className="text-[10px] text-green-500 font-mono flex items-center gap-1">
-                    <Activity className="w-3.5 h-3.5 animate-pulse" /> Live Tracking
+                    <Activity className="w-3.5 h-3.5 animate-pulse" /> Live
                   </span>
                 </div>
 
-                {/* Webcam mirror */}
                 <div className="w-full aspect-video rounded-xl bg-black border border-border/80 overflow-hidden relative">
                   {stream ? (
                     <video
@@ -644,42 +616,14 @@ export default function MockInterviewPage() {
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground bg-muted/10">
-                      Video stream detached.
+                      <VideoOff className="w-6 h-6 mb-1 mx-auto" />
                     </div>
                   )}
                 </div>
 
-                {/* Simulator Indicators grid */}
-                <div className="grid grid-cols-2 gap-3 text-xs font-semibold">
-                  
-                  {/* Eye Contact */}
-                  <div className="p-3 border border-border bg-card/10 rounded-lg flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Eye className="w-3.5 h-3.5 text-primary" /> Eye Contact
-                    </span>
-                    <span className="font-mono text-foreground">{Math.floor(eyeContactRating)}%</span>
-                  </div>
-
-                  {/* Attention Tracking */}
-                  <div className="p-3 border border-border bg-card/10 rounded-lg flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Smile className="w-3.5 h-3.5 text-accent" /> Attention
-                    </span>
-                    <span className="font-mono text-foreground">{Math.floor(attentionRating)}%</span>
-                  </div>
-
-                  {/* Stress Level */}
-                  <div className="p-3 border border-border bg-card/10 rounded-lg flex items-center justify-between col-span-2">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Heart className="w-3.5 h-3.5 text-red-500" /> Stress Level (Estimated)
-                    </span>
-                    <span className={`font-mono font-bold ${stressIndex > 45 ? 'text-red-500' : 'text-green-500'}`}>
-                      {stressIndex > 45 ? 'Elevated' : 'Optimal'} ({Math.floor(stressIndex)}/100)
-                    </span>
-                  </div>
-
-                </div>
-
+                <p className="text-[10px] text-muted-foreground font-semibold text-center">
+                  AI will evaluate your performance metrics at the end of the interview.
+                </p>
               </div>
 
             </div>
