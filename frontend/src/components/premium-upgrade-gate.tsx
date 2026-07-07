@@ -104,7 +104,7 @@ export function PremiumUpgradeGate({ featureName, featureDesc }: PremiumUpgradeG
           </button>
           
           <div className="text-[10px] text-muted-foreground">
-            Razorpay Sandbox Test Mode Enabled — Instant test payments
+            Secured by Razorpay. Direct UPI, card & netbanking payments supported.
           </div>
         </div>
       </div>
