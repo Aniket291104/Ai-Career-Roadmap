@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { Lock, Sparkles, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { useUserStore } from '@/store/user-store';
+import { triggerRazorpayCheckout } from '@/lib/razorpay';
 
 interface PremiumUpgradeGateProps {
   featureName: string;
@@ -11,17 +13,29 @@ interface PremiumUpgradeGateProps {
 }
 
 export function PremiumUpgradeGate({ featureName, featureDesc }: PremiumUpgradeGateProps) {
+  const setUser = useUserStore((state) => state.setUser);
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      const res = await api.post('/payments/checkout', { tier: 'pro' });
-      if (res.data.url) {
-        window.location.href = res.data.url;
-      }
+      await triggerRazorpayCheckout({
+        tier: 'pro',
+        onSuccess: async (response) => {
+          toast.success('Subscription upgraded successfully!');
+          try {
+            const meRes = await api.get('/auth/me');
+            setUser(meRes.data.user);
+          } catch (meErr) {
+            console.error('Failed to reload profile:', meErr);
+          }
+        },
+        onFailure: (err) => {
+          toast.error(err?.description || err?.message || 'Payment failed.');
+        }
+      });
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Payment gateway initialization failed.');
+      toast.error(err.response?.data?.message || err.message || 'Payment gateway initialization failed.');
     } finally {
       setLoading(false);
     }
@@ -83,14 +97,14 @@ export function PremiumUpgradeGate({ featureName, featureDesc }: PremiumUpgradeG
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <span>Upgrade to Premium Pro ($19/mo)</span>
+                <span>Upgrade to Premium Pro ($1.1/mo)</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
           
           <div className="text-[10px] text-muted-foreground">
-            Stripe Mock Sandbox Mode Enabled — Instant simulator upgrade
+            Razorpay Sandbox Test Mode Enabled — Instant test payments
           </div>
         </div>
       </div>

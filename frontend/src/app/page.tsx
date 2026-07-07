@@ -527,7 +527,7 @@ export default function LandingPage() {
                 Designed for engineers preparing to clear FAANG-level technical interview rounds.
               </p>
               <div className="my-8 text-4xl font-display font-extrabold text-foreground">
-                $19 <span className="text-xs font-medium text-muted-foreground">/ month</span>
+                $1.1 <span className="text-xs font-medium text-muted-foreground">/ month</span>
               </div>
               <ul className="space-y-3.5 text-xs font-medium">
                 <li className="flex items-center gap-2">

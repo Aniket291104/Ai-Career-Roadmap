@@ -2,6 +2,13 @@ import { Response } from 'express';
 import { User } from '../models/User';
 import { stripe } from '../config/stripe';
 import { IAuthRequest } from '../middlewares/auth.middleware';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'mock_key',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'mock_secret',
+});
 
 export class PaymentController {
   
@@ -124,6 +131,96 @@ export class PaymentController {
     } catch (err: any) {
       console.error('Webhook signature validation failed:', err.message);
       res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+  }
+
+  static async createRazorpayOrder(req: IAuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
+      }
+
+      const { tier } = req.body;
+      if (!['pro', 'premium'].includes(tier)) {
+        res.status(400).json({ message: 'Invalid subscription tier selected' });
+        return;
+      }
+
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+
+      const amount = tier === 'pro' ? 9000 : 400000; // in paise (90 INR / 4000 INR)
+      
+      const options = {
+        amount,
+        currency: 'INR',
+        receipt: `receipt_${user._id.toString()}_${Date.now()}`,
+        notes: {
+          userId: user._id.toString(),
+          tier,
+        }
+      };
+
+      const order = await razorpay.orders.create(options);
+      
+      res.status(200).json({
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        tier
+      });
+    } catch (error) {
+      console.error('Razorpay Order Creation Error:', error);
+      res.status(500).json({ message: 'Failed to create Razorpay order' });
+    }
+  }
+
+  static async verifyRazorpayPayment(req: IAuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
+      }
+
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, tier } = req.body;
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !tier) {
+        res.status(400).json({ message: 'Missing required validation fields' });
+        return;
+      }
+
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+      
+      const generatedSignature = crypto
+        .createHmac('sha256', keySecret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+      if (generatedSignature !== razorpay_signature) {
+        res.status(400).json({ message: 'Payment signature mismatch. Transaction not authentic.' });
+        return;
+      }
+
+      const user = await User.findById(req.user.userId);
+      if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+
+      user.subscriptionTier = tier;
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Payment verified and subscription activated!',
+        user
+      });
+    } catch (error) {
+      console.error('Razorpay Verification Error:', error);
+      res.status(500).json({ message: 'Failed to verify signature' });
     }
   }
 }

@@ -5,6 +5,7 @@ import { DashboardLayout } from '@/components/dashboard-layout';
 import { api } from '@/lib/api';
 import { useUserStore } from '@/store/user-store';
 import { toast } from 'sonner';
+import { triggerRazorpayCheckout } from '@/lib/razorpay';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -103,12 +104,23 @@ export default function SettingsPage() {
 
   const handleSubscriptionUpgrade = async (tier: 'pro' | 'premium') => {
     try {
-      const res = await api.post('/payments/checkout', { tier });
-      if (res.data.url) {
-        window.location.href = res.data.url;
-      }
+      await triggerRazorpayCheckout({
+        tier,
+        onSuccess: async (response) => {
+          toast.success(`Subscription upgraded to ${tier} successfully!`);
+          try {
+            const meRes = await api.get('/auth/me');
+            setUser(meRes.data.user);
+          } catch (meErr) {
+            console.error('Failed to reload profile:', meErr);
+          }
+        },
+        onFailure: (err) => {
+          toast.error(err?.description || err?.message || 'Payment failed.');
+        }
+      });
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Payment gateway initialization failed.');
+      toast.error(err.response?.data?.message || err.message || 'Payment gateway initialization failed.');
     }
   };
 
@@ -185,7 +197,7 @@ export default function SettingsPage() {
                     onClick={() => handleSubscriptionUpgrade('pro')}
                     className="w-full py-2.5 bg-gradient-to-r from-primary to-accent text-white rounded-lg text-xs font-bold shadow hover:opacity-95 transition-all cursor-pointer"
                   >
-                    Upgrade to Pro ($19/mo)
+                    Upgrade to Pro ($1.1/mo)
                   </button>
                   <button
                     type="button"
