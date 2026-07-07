@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { useUserStore } from '@/store/user-store';
+import { PremiumUpgradeGate } from '@/components/premium-upgrade-gate';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useCelebration } from '@/components/dashboard-upgrades/celebration-provider';
@@ -64,6 +66,8 @@ interface InterviewSession {
 }
 
 export default function MockInterviewPage() {
+  const user = useUserStore((state) => state.user);
+  const isPremium = user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium';
   const { triggerCoins, triggerConfetti } = useCelebration();
 
   // Wizard settings
@@ -324,7 +328,13 @@ export default function MockInterviewPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      {!isPremium ? (
+        <PremiumUpgradeGate 
+          featureName="Mock Technical Interview" 
+          featureDesc="Simulate live developer coding and HR interview rounds with structured real-time speech and metrics feedback bots."
+        />
+      ) : (
+        <div className="max-w-6xl mx-auto space-y-6">
         
         {/* STEP 1: CONFIGURATION WIZARD SCREEN */}
         {step === 'config' && (
@@ -877,7 +887,8 @@ export default function MockInterviewPage() {
           </div>
         )}
 
-      </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

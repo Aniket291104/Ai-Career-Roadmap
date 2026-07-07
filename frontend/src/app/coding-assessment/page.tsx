@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { useUserStore } from '@/store/user-store';
+import { PremiumUpgradeGate } from '@/components/premium-upgrade-gate';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useCelebration } from '@/components/dashboard-upgrades/celebration-provider';
@@ -46,6 +48,8 @@ interface ChatInteraction {
 }
 
 export default function CodingAssessmentPage() {
+  const user = useUserStore((state) => state.user);
+  const isPremium = user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium';
   const { triggerCoins, triggerConfetti, triggerLevelUp, triggerBadgeUnlocked } = useCelebration();
 
   // Settings
@@ -238,7 +242,13 @@ export default function CodingAssessmentPage() {
 
   return (
     <DashboardLayout>
-      <div className={`space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-background p-6 overflow-y-auto' : ''}`}>
+      {!isPremium ? (
+        <PremiumUpgradeGate 
+          featureName="Coding Assessment Sandbox" 
+          featureDesc="Test your programming chops with dynamic coding sandboxes, test-case evaluations, and AI mentor review feedback."
+        />
+      ) : (
+        <div className={`space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 bg-background p-6 overflow-y-auto' : ''}`}>
         
         {/* TOP CONFIGURATION ROW */}
         <div className="p-5 rounded-2xl glass-card border border-border flex flex-col md:flex-row items-center justify-between gap-4">
@@ -741,7 +751,8 @@ export default function CodingAssessmentPage() {
           </div>
         )}
 
-      </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

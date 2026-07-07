@@ -83,7 +83,7 @@ export function FloatingAIAssistant() {
   const quickActions = [
     { label: 'Explain this topic', prompt: 'Can you explain the difference between REST and gRPC with examples?' },
     { label: 'Generate Quiz', prompt: 'Create a 5-question TypeScript multiple-choice quiz.' },
-    { label: 'Review Resume', prompt: 'What are key ATS formatting tips for an AI resume?' },
+    { label: 'Review Resume', url: 'https://hireboost1.vercel.app' },
     { label: 'Debug Code', prompt: 'Why does my React useEffect run twice, and how do I clean up subscriptions?' },
     { label: 'Career Advice', prompt: 'What is the optimal roadmap to transition from Frontend to AI Engineering?' },
     { label: 'Generate Project', prompt: 'Suggest 3 unique portfolio projects using Next.js and MongoDB.' },
@@ -251,7 +251,13 @@ export function FloatingAIAssistant() {
                   {quickActions.map((action, idx) => (
                     <button
                       key={idx}
-                      onClick={() => handleSendMessage(action.prompt)}
+                      onClick={() => {
+                        if (action.url) {
+                          window.open(action.url, '_blank');
+                        } else if (action.prompt) {
+                          handleSendMessage(action.prompt);
+                        }
+                      }}
                       className="px-2 py-1 text-[10px] font-bold rounded-lg border border-border bg-card hover:bg-primary/10 hover:border-primary/30 transition-all flex items-center gap-1 text-muted-foreground hover:text-primary"
                     >
                       <span>{action.label}</span>

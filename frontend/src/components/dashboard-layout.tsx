@@ -54,6 +54,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       }
     };
 
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isPaymentUpdate = searchParams.get('payment') || searchParams.get('success');
+      if (isPaymentUpdate) {
+        fetchProfile();
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+        return;
+      }
+    }
+
     if (!isLoggedIn) {
       fetchProfile();
     }

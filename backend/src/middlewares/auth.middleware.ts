@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, verifyRefreshToken, generateAccessToken, sendTokenCookies, ITokenPayload } from '../utils/jwt';
+import { User } from '../models/User';
 
 export interface IAuthRequest extends Request {
   user?: ITokenPayload;
@@ -93,3 +94,26 @@ export const checkRole = (allowedRoles: ('student' | 'mentor' | 'admin')[]) => {
     next();
   };
 };
+
+export const requirePremiumSubscription = async (
+  req: IAuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized. Missing credentials.' });
+    return;
+  }
+
+  const user = await User.findById(req.user.userId);
+  const isFreeTier = !user || !user.subscriptionTier || user.subscriptionTier === 'free';
+  if (isFreeTier) {
+    res.status(403).json({
+      message: 'This feature is only available on Premium Pro plans. Please upgrade your subscription to gain access.',
+    });
+    return;
+  }
+
+  next();
+};
+

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
+import { useUserStore } from '@/store/user-store';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { 
@@ -85,6 +86,7 @@ interface RoadmapDetail {
 
 export default function RoadmapDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const user = useUserStore((state) => state.user);
   const { id } = use(params);
   const [roadmap, setRoadmap] = useState<RoadmapDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,6 +123,16 @@ export default function RoadmapDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const handleAdapt = async () => {
+    const isPremium = user?.subscriptionTier === 'pro' || user?.subscriptionTier === 'premium';
+    if (!isPremium) {
+      toast.error('AI adaptation is a Premium Pro feature. Upgrade to unlock adaptive roadmap adjustments!', {
+        action: {
+          label: 'Upgrade',
+          onClick: () => router.push('/settings')
+        }
+      });
+      return;
+    }
     setAdapting(true);
     try {
       const res = await api.post(`/roadmaps/${id}/adapt`);
