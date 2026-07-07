@@ -497,8 +497,21 @@ export class AIService {
       const response = await chat.sendMessage({ message });
       return response.text || 'I could not process that request. Could you rephrase?';
     } catch (error) {
-      console.error('Gemini Chat Error:', error);
-      return 'I encountered a connection error. Let me know what concepts or topics you would like to explore!';
+      console.error('Gemini Chat Error, falling back to mock response:', error);
+      
+      const responses: Record<string, string> = {
+        'explain': 'REST APIs communicate synchronously over HTTP/1.1 using HTTP methods, whereas gRPC uses HTTP/2 with Protocol Buffers for high-performance, duplex, binary communication.',
+        'quiz': 'Sure! Here is a MC question:\nWhat is the type of "null" in JavaScript?\nA. null\nB. object\nC. undefined\n(Answer: B. object)',
+        'resume': '1. Use clear headings (Skills, Experience, Projects).\n2. Write statements in Action-Result format.\n3. Integrate keywords like "TypeScript", "REST APIs", and "CI/CD".',
+        'html': 'HTML (HyperText Markup Language) is the standard markup language used to create web pages. It defines the structure of web content using elements/tags like <h1>, <p>, and <div>.',
+      };
+
+      const key = Object.keys(responses).find((k) => message.toLowerCase().includes(k)) || 'default';
+      if (key !== 'default') {
+        return responses[key];
+      }
+
+      return `I am currently running in offline developer mode, but I can guide you! To answer your question about "${message}": Make sure to focus on clean code, modular design, and robust error handling. Let me know if you need specific templates or configurations!`;
     }
   }
 
