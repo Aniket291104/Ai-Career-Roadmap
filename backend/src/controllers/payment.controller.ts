@@ -158,7 +158,7 @@ export class PaymentController {
       const options = {
         amount,
         currency: 'INR',
-        receipt: `receipt_${user._id.toString()}_${Date.now()}`,
+        receipt: `rcpt_${user._id.toString().slice(-8)}_${Date.now()}`,
         notes: {
           userId: user._id.toString(),
           tier,
