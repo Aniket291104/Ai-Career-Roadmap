@@ -44,13 +44,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       try {
         const res = await api.get('/auth/me');
         setUser(res.data.user);
-      } catch (err) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+          }
+          logout();
+          router.push('/login');
         }
-        logout();
-        router.push('/login');
       }
     };
 

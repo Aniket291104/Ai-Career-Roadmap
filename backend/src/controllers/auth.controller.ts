@@ -117,29 +117,39 @@ export class AuthController {
         return;
       }
 
-      console.log('=== DEBUG VERIFY OTP ===');
-      console.log('Input Email:', email);
-      console.log('Input OTP:', otp);
-      console.log('Database User Email:', user.email);
-      console.log('Database User OTP:', user.otp);
-      console.log('Database User OTP Expiry:', user.otpExpiry);
-      console.log('Current Date:', new Date());
-      console.log('Condition results:');
-      console.log('!user.otp:', !user.otp);
-      console.log('!user.otpExpiry:', !user.otpExpiry);
-      console.log('user.otp !== otp:', user.otp !== otp);
-      console.log('user.otpExpiry < new Date():', user.otpExpiry ? user.otpExpiry < new Date() : true);
-      console.log('========================');
-
-      if (!user.otp || !user.otpExpiry || user.otp !== otp || user.otpExpiry < new Date()) {
-        res.status(400).json({ message: 'Invalid or expired OTP code' });
+      if (!user.otp || !user.otpExpiry || user.otpExpiry < new Date()) {
+        res.status(400).json({ message: 'OTP code has expired or is invalid. Please request a new OTP.' });
         return;
       }
 
-      // Mark verified, clear OTP
+      // Check max attempts limit
+      const currentAttempts = (user as any).otpAttempts || 0;
+      if (currentAttempts >= 5) {
+        user.otp = undefined;
+        user.otpExpiry = undefined;
+        (user as any).otpAttempts = 0;
+        await user.save();
+        res.status(429).json({ message: 'Maximum OTP verification attempts exceeded. Please request a new code.' });
+        return;
+      }
+
+      if (user.otp !== otp) {
+        (user as any).otpAttempts = currentAttempts + 1;
+        await user.save();
+        const remaining = 5 - (currentAttempts + 1);
+        res.status(400).json({ 
+          message: remaining > 0 
+            ? `Invalid OTP code. You have ${remaining} attempts remaining.` 
+            : 'Maximum OTP verification attempts exceeded. Please request a new code.' 
+        });
+        return;
+      }
+
+      // Mark verified, clear OTP & attempts
       user.isVerified = true;
       user.otp = undefined;
       user.otpExpiry = undefined;
+      (user as any).otpAttempts = 0;
       await user.save();
 
       // Sign JWTs

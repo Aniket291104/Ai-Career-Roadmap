@@ -64,6 +64,8 @@ const checkOrigin = (
   return callback(new Error('Not allowed by CORS'));
 };
 
+import { verifyAccessToken } from './utils/jwt';
+
 // Socket.io initialization
 const io = new SocketIOServer(server, {
   cors: {
@@ -71,6 +73,23 @@ const io = new SocketIOServer(server, {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   },
+});
+
+// Socket.io JWT Auth Middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
+  if (!token) {
+    // Allow anonymous connections for public notifications if needed, but restrict room joining
+    return next();
+  }
+  try {
+    const decoded = verifyAccessToken(token);
+    (socket as any).userId = decoded.userId;
+    (socket as any).userRole = decoded.role;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error: Invalid or expired token'));
+  }
 });
 
 // Attach Socket.io to request object for use in controllers
@@ -134,8 +153,16 @@ io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
   socket.on('join', (userId: string) => {
-    socket.join(userId);
-    console.log(`User ${userId} joined room`);
+    const authUserId = (socket as any).userId;
+    const authUserRole = (socket as any).userRole;
+
+    // Secure check: Only join room if userId matches authenticated socket user or user is admin
+    if (authUserId === userId || authUserRole === 'admin') {
+      socket.join(userId);
+      console.log(`User ${userId} securely joined room`);
+    } else {
+      console.warn(`Unauthorized room join attempt by socket ${socket.id} for userId: ${userId}`);
+    }
   });
 
   socket.on('disconnect', () => {

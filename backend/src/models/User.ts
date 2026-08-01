@@ -70,6 +70,7 @@ const UserSchema = new Schema<IUser>(
     verificationTokenExpiry: { type: Date },
     otp: { type: String },
     otpExpiry: { type: Date },
+    otpAttempts: { type: Number, default: 0 },
     resetPasswordToken: { type: String },
     resetPasswordExpiry: { type: Date },
 

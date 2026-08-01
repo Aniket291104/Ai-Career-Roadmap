@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, X, ShieldAlert, Award, Compass, MessageSquare, Briefcase, Sparkles, Settings } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { useUserStore } from '@/store/user-store';
 
 interface Notification {
   id: string;
@@ -16,6 +17,7 @@ interface Notification {
 }
 
 export function NotificationCenter() {
+  const { user } = useUserStore();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'updates' | 'messages' | 'alerts'>('all');
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -289,19 +291,21 @@ export function NotificationCenter() {
                           <span className="text-[9px] text-muted-foreground/60 font-semibold block mt-1.5">{item.time}</span>
                         </div>
 
-                        {/* Action buttons */}
-                        <div className="absolute right-3 top-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Action buttons — always visible on mobile, hover visible on desktop */}
+                        <div className="absolute right-3 top-3 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => toggleRead(item.id)}
-                            className="p-1 rounded hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors min-w-7 min-h-7 flex items-center justify-center"
                             title={item.read ? "Mark unread" : "Mark read"}
+                            aria-label={item.read ? "Mark unread" : "Mark read"}
                           >
                             <Check className={`w-3.5 h-3.5 ${item.read ? 'text-muted-foreground' : 'text-green-500'}`} />
                           </button>
                           <button
                             onClick={() => deleteNotification(item.id)}
-                            className="p-1 rounded hover:bg-muted/40 text-muted-foreground hover:text-red-500 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-muted/40 text-muted-foreground hover:text-red-500 transition-colors min-w-7 min-h-7 flex items-center justify-center"
                             title="Dismiss"
+                            aria-label="Dismiss notification"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -317,8 +321,8 @@ export function NotificationCenter() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-2 border-t border-border bg-muted/40 text-center text-[10px] font-bold text-muted-foreground">
-                  Logged in as Aniket
+                <div className="px-4 py-2 border-t border-border bg-muted/40 text-center text-[10px] font-bold text-muted-foreground truncate">
+                  Logged in as {user?.name || user?.email || 'User'}
                 </div>
               </>
             )}

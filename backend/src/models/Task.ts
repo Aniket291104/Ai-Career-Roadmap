@@ -48,4 +48,7 @@ const TaskSchema = new Schema<ITask>(
   { timestamps: true }
 );
 
+TaskSchema.index({ user: 1, status: 1 });
+TaskSchema.index({ user: 1, createdAt: -1 });
+
 export const Task = model<ITask>('Task', TaskSchema);

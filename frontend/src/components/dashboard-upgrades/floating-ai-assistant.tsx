@@ -27,6 +27,7 @@ export function FloatingAIAssistant() {
     },
   ]);
   const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<any | null>(null);
@@ -41,42 +42,54 @@ export function FloatingAIAssistant() {
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
-        const rec = new SpeechRecognition();
-        rec.continuous = false;
-        rec.interimResults = false;
-        rec.lang = 'en-US';
+        setSpeechSupported(true);
+        try {
+          const rec = new SpeechRecognition();
+          rec.continuous = false;
+          rec.interimResults = false;
+          rec.lang = 'en-US';
 
-        rec.onresult = (event: any) => {
-          const text = event.results[0][0].transcript;
-          setInput((prev) => prev + ' ' + text);
-          setIsListening(false);
-        };
+          rec.onresult = (event: any) => {
+            const text = event.results[0][0]?.transcript || '';
+            setInput((prev) => (prev ? prev + ' ' + text : text));
+            setIsListening(false);
+          };
 
-        rec.onerror = () => {
-          setIsListening(false);
-          toast.error('Voice input failed. Please try speaking again.');
-        };
+          rec.onerror = () => {
+            setIsListening(false);
+            toast.error('Voice input encountered an error. Please try again.');
+          };
 
-        rec.onend = () => {
-          setIsListening(false);
-        };
+          rec.onend = () => {
+            setIsListening(false);
+          };
 
-        recognitionRef.current = rec;
+          recognitionRef.current = rec;
+        } catch (e) {
+          setSpeechSupported(false);
+        }
       }
     }
   }, []);
 
   const startVoiceInput = () => {
-    if (!recognitionRef.current) {
-      toast.error('Speech recognition is not supported in this browser.');
+    if (!speechSupported || !recognitionRef.current) {
+      toast.error('Speech recognition is not supported in your browser.');
       return;
     }
     if (isListening) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
       setIsListening(false);
     } else {
-      setIsListening(true);
-      recognitionRef.current.start();
+      try {
+        setIsListening(true);
+        recognitionRef.current.start();
+      } catch (e) {
+        setIsListening(false);
+        toast.error('Could not activate microphone.');
+      }
     }
   };
 
