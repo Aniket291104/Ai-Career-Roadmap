@@ -178,10 +178,10 @@ export function FloatingAIAssistant() {
             dragMomentum={false}
             dragConstraints={{ top: 0, bottom: 600, left: -1000, right: 0 }}
             className={`
-              rounded-2xl bg-card/95 backdrop-blur-xl shadow-2xl border border-border/60 overflow-hidden flex flex-col z-50
+              rounded-2xl bg-card shadow-2xl border border-border overflow-hidden flex flex-col z-50
               ${isFullscreen 
                 ? 'fixed inset-4 w-auto h-auto' 
-                : 'w-[380px] sm:w-[420px] h-[520px] max-h-[85vh]'}
+                : 'w-[calc(100vw-2rem)] sm:w-[420px] h-[520px] max-h-[85vh]'}
             `}
           >
             {/* Window Header */}

@@ -168,11 +168,11 @@ export function NotificationCenter() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-3 w-[360px] sm:w-[400px] rounded-2xl bg-card/95 backdrop-blur-xl shadow-2xl border border-border overflow-hidden z-50 flex flex-col"
+            className="fixed top-16 left-3 right-3 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:mt-3 sm:w-[400px] rounded-2xl bg-card shadow-2xl border border-border overflow-hidden z-50 flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-card/45 border-b border-border/40 select-none">
-              <span className="text-xs font-bold tracking-wide">Notifications</span>
+            <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border select-none">
+              <span className="text-xs font-bold tracking-wide text-foreground">Notifications</span>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowSettings(!showSettings)}
@@ -247,7 +247,7 @@ export function NotificationCenter() {
               /* Notifications List Pane */
               <>
                 {/* Tabs */}
-                <div className="flex border-b border-border/30 bg-muted/10 text-[10px] font-bold select-none">
+                <div className="flex border-b border-border bg-muted/30 text-[10px] font-bold select-none">
                   {['all', 'updates', 'messages', 'alerts'].map((tab) => (
                     <button
                       key={tab}
@@ -317,7 +317,7 @@ export function NotificationCenter() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-2 border-t border-border/30 bg-muted/20 text-center text-[10px] font-bold text-muted-foreground">
+                <div className="px-4 py-2 border-t border-border bg-muted/40 text-center text-[10px] font-bold text-muted-foreground">
                   Logged in as Aniket
                 </div>
               </>

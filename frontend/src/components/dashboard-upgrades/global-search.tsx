@@ -104,7 +104,7 @@ export function GlobalSearch() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg rounded-2xl bg-card/95 backdrop-blur-xl shadow-2xl border border-border overflow-hidden relative z-10 flex flex-col max-h-[60vh]"
+              className="w-full max-w-lg rounded-2xl bg-card shadow-2xl border border-border overflow-hidden relative z-10 flex flex-col max-h-[60vh]"
             >
               {/* Input Header */}
               <div className="flex items-center border-b border-border/40 px-4 py-3">
