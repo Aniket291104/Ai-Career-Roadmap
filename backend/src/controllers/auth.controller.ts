@@ -123,18 +123,18 @@ export class AuthController {
       }
 
       // Check max attempts limit
-      const currentAttempts = (user as any).otpAttempts || 0;
+      const currentAttempts = user.otpAttempts || 0;
       if (currentAttempts >= 5) {
         user.otp = undefined;
         user.otpExpiry = undefined;
-        (user as any).otpAttempts = 0;
+        user.otpAttempts = 0;
         await user.save();
         res.status(429).json({ message: 'Maximum OTP verification attempts exceeded. Please request a new code.' });
         return;
       }
 
       if (user.otp !== otp) {
-        (user as any).otpAttempts = currentAttempts + 1;
+        user.otpAttempts = currentAttempts + 1;
         await user.save();
         const remaining = 5 - (currentAttempts + 1);
         res.status(400).json({ 
@@ -149,7 +149,7 @@ export class AuthController {
       user.isVerified = true;
       user.otp = undefined;
       user.otpExpiry = undefined;
-      (user as any).otpAttempts = 0;
+      user.otpAttempts = 0;
       await user.save();
 
       // Sign JWTs
