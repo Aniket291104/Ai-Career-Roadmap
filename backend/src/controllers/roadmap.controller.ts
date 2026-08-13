@@ -2,9 +2,55 @@ import { Response } from 'express';
 import { Roadmap } from '../models/Roadmap';
 import { Progress } from '../models/Progress';
 import { User } from '../models/User';
+import { Task } from '../models/Task';
 import { AIService } from '../services/ai.service';
 import { generateRoadmapSchema, updateTaskStatusSchema } from '../validators/roadmap.validator';
 import { IAuthRequest } from '../middlewares/auth.middleware';
+import { z } from 'zod';
+
+const resourceLinkSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  type: z.enum(['docs', 'youtube', 'course', 'github', 'blog', 'book', 'practice', 'notes']),
+});
+
+const dailyTaskSchema = z.object({
+  dayNumber: z.number(),
+  title: z.string(),
+  description: z.string(),
+  codingPractice: z.string().optional(),
+  status: z.enum(['pending', 'completed']).default('pending'),
+  links: z.array(resourceLinkSchema).optional(),
+});
+
+const projectBriefSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  techStack: z.array(z.string()).default([]),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).default('intermediate'),
+  estimatedHours: z.number().default(5),
+  folderStructure: z.string().optional(),
+  deploymentGuide: z.string().optional(),
+});
+
+const weeklyMilestoneSchema = z.object({
+  weekNumber: z.number(),
+  title: z.string(),
+  description: z.string(),
+  learningGoals: z.array(z.string()).default([]),
+  dailyTasks: z.array(dailyTaskSchema).default([]),
+  resources: z.array(resourceLinkSchema).default([]),
+  projects: z.array(projectBriefSchema).default([]),
+});
+
+const monthlyMilestoneSchema = z.object({
+  monthNumber: z.number(),
+  title: z.string(),
+  description: z.string(),
+  weeks: z.array(weeklyMilestoneSchema).default([]),
+});
+
+const timelineSchema = z.array(monthlyMilestoneSchema);
 
 export class RoadmapController {
   
@@ -140,6 +186,7 @@ export class RoadmapController {
 
       // Find the specific daily task in the nested schema
       let taskUpdated = false;
+      let taskStatusChangedToCompleted = false;
       let totalTasks = 0;
       let completedTasksCount = 0;
 
@@ -152,6 +199,9 @@ export class RoadmapController {
               week.weekNumber === weekNumber &&
               dailyTask.dayNumber === dayNumber
             ) {
+              if (dailyTask.status !== 'completed' && status === 'completed') {
+                taskStatusChangedToCompleted = true;
+              }
               dailyTask.status = status;
               taskUpdated = true;
             }
@@ -173,7 +223,7 @@ export class RoadmapController {
       await roadmap.save();
 
       // If task was marked completed, log XP points, update user streak, and log daily activity heatmap
-      if (status === 'completed') {
+      if (taskStatusChangedToCompleted) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -264,6 +314,9 @@ export class RoadmapController {
         return;
       }
 
+      // Cleanup referential integrity: Delete all Kanban tasks linked to this roadmap
+      await Task.deleteMany({ roadmapId: deleted._id });
+
       res.status(200).json({ message: 'Roadmap deleted successfully' });
     } catch (error) {
       console.error('Delete Roadmap Error:', error);
@@ -284,6 +337,17 @@ export class RoadmapController {
         return;
       }
 
+      // Determine the base starting date for calendar calculations
+      let baseDate = roadmap.createdAt ? new Date(roadmap.createdAt) : new Date();
+      
+      const queryDate = req.query.startDate || req.body.startDate;
+      if (queryDate && typeof queryDate === 'string') {
+        const parsedStart = new Date(queryDate);
+        if (!isNaN(parsedStart.getTime())) {
+          baseDate = parsedStart;
+        }
+      }
+
       let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//AI Career Roadmap Generator//EN\r\n";
       let dayCount = 0;
 
@@ -291,8 +355,8 @@ export class RoadmapController {
         for (const week of month.weeks) {
           for (const dailyTask of week.dailyTasks) {
             dayCount++;
-            const eventDate = new Date();
-            eventDate.setDate(eventDate.getDate() + dayCount);
+            const eventDate = new Date(baseDate);
+            eventDate.setDate(eventDate.getDate() + (dayCount - 1)); // start on day 0 offset
 
             const year = eventDate.getFullYear();
             const monthStr = String(eventDate.getMonth() + 1).padStart(2, '0');
@@ -344,12 +408,17 @@ export class RoadmapController {
       
       try {
         const parsedTimeline = JSON.parse(responseText);
-        if (Array.isArray(parsedTimeline)) {
-          roadmap.timeline = parsedTimeline;
+        const validation = timelineSchema.safeParse(parsedTimeline);
+        if (validation.success) {
+          roadmap.timeline = validation.data as any;
           await roadmap.save();
+        } else {
+          console.warn('AI adapt return does not match timeline schema validation profile:', validation.error);
+          throw new Error('Schema mismatch');
         }
       } catch (parseErr) {
-        console.warn('AI adapt return is not raw JSON, keeping timeline same with simulated extra reviews.');
+        console.warn('AI adapt failed parsing or validation. Keeping timeline and placing simulated review checkpoints.');
+        
         // Simulated fallback: insert a review checkpoint in the first incomplete item
         let inserted = false;
         for (const month of roadmap.timeline) {
