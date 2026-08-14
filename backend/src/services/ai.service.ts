@@ -127,7 +127,24 @@ export class AIService {
       return JSON.parse(text);
     } catch (error) {
       console.error('Gemini Roadmap Generation Error, falling back to mock:', error);
-      return this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage);
+      // Fallback to mock data and format to targetDuration
+      const mock = this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage);
+      mock.estimatedDuration = `${targetDuration} Months`;
+      if (mock.timeline && Array.isArray(mock.timeline)) {
+        if (mock.timeline.length > targetDuration) {
+          mock.timeline = mock.timeline.slice(0, targetDuration);
+        } else {
+          const originalTimeline = [...mock.timeline];
+          while (mock.timeline.length < targetDuration) {
+            const nextMonthIndex = mock.timeline.length + 1;
+            const templateMonth = JSON.parse(JSON.stringify(originalTimeline[(nextMonthIndex - 1) % originalTimeline.length]));
+            templateMonth.monthNumber = nextMonthIndex;
+            templateMonth.title = `Month ${nextMonthIndex}: Advanced ${goal} Scaling`;
+            mock.timeline.push(templateMonth);
+          }
+        }
+      }
+      return mock;
     }
   }
 
