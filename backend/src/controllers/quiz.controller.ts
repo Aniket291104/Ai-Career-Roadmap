@@ -20,8 +20,12 @@ export class QuizController {
         return;
       }
 
-      const skills = user.skills.length > 0 ? user.skills : ['Programming'];
-      const goal = user.careerGoal || 'Software Engineer';
+      const skills = req.body.skills && Array.isArray(req.body.skills) && req.body.skills.length > 0
+        ? req.body.skills
+        : (user.skills.length > 0 ? user.skills : ['Programming']);
+      const goal = req.body.goal && typeof req.body.goal === 'string'
+        ? req.body.goal
+        : (user.careerGoal || 'Software Engineer');
 
       // Generate questions via AI Service
       const questions = await AIService.generateQuiz(skills, goal);

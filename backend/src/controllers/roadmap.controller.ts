@@ -67,7 +67,7 @@ export class RoadmapController {
         return;
       }
 
-      const { skills, goal, dailyStudyHours, learningStyle, preferredLanguage } = parsed.data;
+      const { skills, goal, dailyStudyHours, learningStyle, preferredLanguage, targetDuration } = parsed.data;
 
       // Limit check: free tier users can generate at most 2 roadmaps
       const user = await User.findById(req.user.userId);
@@ -88,7 +88,8 @@ export class RoadmapController {
         goal,
         dailyStudyHours,
         learningStyle,
-        preferredLanguage
+        preferredLanguage,
+        targetDuration
       );
 
       // Create Roadmap record
@@ -440,6 +441,86 @@ export class RoadmapController {
       });
     } catch (error) {
       console.error('Adapt Roadmap Error:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  }
+
+  static async submitProject(req: IAuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: 'Unauthorized' });
+        return;
+      }
+
+      const { projectTitle, repoUrl, description } = req.body;
+      if (!projectTitle || !repoUrl) {
+        res.status(400).json({ message: 'Project title and repository URL are required' });
+        return;
+      }
+
+      // Call AI Service to review submission
+      const review = await AIService.reviewProject(projectTitle, repoUrl, description || '');
+
+      // Trigger gamification updates: award +50 XP
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const user = await User.findById(req.user.userId);
+      if (user) {
+        user.xpPoints += 50;
+        user.lastActiveDate = new Date();
+
+        // Increment streak if active today
+        const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
+        if (lastActive) {
+          lastActive.setHours(0, 0, 0, 0);
+          const diffTime = Math.abs(today.getTime() - lastActive.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays === 1) {
+            user.currentStreak += 1;
+            if (user.currentStreak > user.maxStreak) {
+              user.maxStreak = user.currentStreak;
+            }
+          } else if (diffDays > 1) {
+            user.currentStreak = 1;
+          }
+        } else {
+          user.currentStreak = 1;
+          user.maxStreak = 1;
+        }
+
+        await user.save();
+
+        // Log progress activity heatmap
+        let progress = await Progress.findOne({ user: user._id });
+        if (!progress) {
+          progress = await Progress.create({ user: user._id });
+        }
+
+        const existingActivity = progress.dailyActivity.find(
+          (act) => new Date(act.date).toDateString() === today.toDateString()
+        );
+
+        if (existingActivity) {
+          existingActivity.count += 1;
+        } else {
+          progress.dailyActivity.push({ date: today, count: 1 });
+        }
+
+        progress.xpHistory.push({ date: new Date(), points: 50 });
+        const activitiesCount = progress.dailyActivity.length;
+        progress.consistencyScore = Math.min(Math.round((activitiesCount / 30) * 100), 100);
+
+        await progress.save();
+      }
+
+      res.status(200).json({
+        message: 'Project submitted and reviewed successfully by AI Senior Dev',
+        xpGained: 50,
+        review,
+      });
+    } catch (error) {
+      console.error('Submit Project Error:', error);
       res.status(500).json({ message: 'Internal Server Error' });
     }
   }

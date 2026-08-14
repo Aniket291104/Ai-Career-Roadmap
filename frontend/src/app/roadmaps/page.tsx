@@ -29,6 +29,7 @@ const generateRoadmapSchema = z.object({
   dailyStudyHours: z.number().min(1).max(24),
   learningStyle: z.enum(['visual', 'practical', 'theoretical', 'mixed']),
   preferredLanguage: z.string(),
+  targetDuration: z.number().min(1).max(12),
 });
 
 type GenerateInput = z.infer<typeof generateRoadmapSchema>;
@@ -81,6 +82,7 @@ export default function RoadmapsPage() {
       dailyStudyHours: 2,
       learningStyle: 'mixed',
       preferredLanguage: 'English',
+      targetDuration: 3,
     }
   });
 
@@ -228,7 +230,7 @@ export default function RoadmapsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
                       <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Daily Study Hours</label>
                       <input
@@ -239,6 +241,21 @@ export default function RoadmapsPage() {
                         className="w-full px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm font-medium transition-all"
                       />
                       {errors.dailyStudyHours && <p className="text-[11px] text-red-500 mt-1 font-semibold">{errors.dailyStudyHours.message}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Target Duration</label>
+                      <select
+                        {...register('targetDuration', { valueAsNumber: true })}
+                        className="w-full px-3 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm font-semibold text-muted-foreground transition-all"
+                      >
+                        <option value={1}>1 Month (Crash Course)</option>
+                        <option value={2}>2 Months (Fast Track)</option>
+                        <option value={3}>3 Months (Standard)</option>
+                        <option value={6}>6 Months (Deep Dive)</option>
+                        <option value={12}>12 Months (Comprehensive)</option>
+                      </select>
+                      {errors.targetDuration && <p className="text-[11px] text-red-500 mt-1 font-semibold">{errors.targetDuration.message}</p>}
                     </div>
 
                     <div>

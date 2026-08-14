@@ -22,17 +22,35 @@ export class AIService {
     goal: string,
     dailyHours: number,
     learningStyle: string,
-    preferredLanguage: string
+    preferredLanguage: string,
+    targetDuration: number = 3
   ): Promise<any> {
     if (isMock || !ai) {
       console.log('Using mock roadmap generator...');
-      return this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage);
+      const mock = this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage);
+      mock.estimatedDuration = `${targetDuration} Months`;
+      if (mock.timeline && Array.isArray(mock.timeline)) {
+        if (mock.timeline.length > targetDuration) {
+          mock.timeline = mock.timeline.slice(0, targetDuration);
+        } else {
+          const originalTimeline = [...mock.timeline];
+          while (mock.timeline.length < targetDuration) {
+            const nextMonthIndex = mock.timeline.length + 1;
+            const templateMonth = JSON.parse(JSON.stringify(originalTimeline[(nextMonthIndex - 1) % originalTimeline.length]));
+            templateMonth.monthNumber = nextMonthIndex;
+            templateMonth.title = `Month ${nextMonthIndex}: Advanced ${goal} Scaling`;
+            mock.timeline.push(templateMonth);
+          }
+        }
+      }
+      return mock;
     }
 
     const prompt = `
       Create a highly structured career roadmap for a user whose current skills are: [${skills.join(', ')}].
       Their primary career goal is: "${goal}".
       Their learning style is: "${learningStyle}" and they can study ${dailyHours} hours per day.
+      The target timeline duration they want to achieve this goal in is: ${targetDuration} months.
       Please output the roadmap in the preferred language: "${preferredLanguage}".
 
       You MUST respond with a valid JSON object matching this schema structure:
@@ -86,7 +104,7 @@ export class AIService {
       }
 
       CRITICAL TIMELINE REQUIREMENTS:
-      1. Provide a comprehensive, complete roadmap that covers all required months (e.g. 1 to 3 months depending on complexity of the career goal).
+      1. Provide a comprehensive, complete roadmap that covers exactly ${targetDuration} months (so monthNumber ranges from 1 to ${targetDuration}).
       2. Each month MUST contain exactly 4 weeks (weekNumber from 1 to 4).
       3. Each week MUST contain exactly 6 daily tasks, representing a 6-day study routine (dayNumber from 1 to 6 for each week).
       4. Ensure all JSON fields are populated with highly realistic, relevant tech details. Do not use placeholders.
@@ -1501,6 +1519,72 @@ export class AIService {
       console.error('Gemini Interviewer Dialogue Error:', e);
       return {
         reply: 'Interesting response! How would this behave if we scaled the data across multi-cluster sharded nodes?'
+      };
+    }
+  }
+
+  /**
+   * Reviews user project submissions using Gemini AI
+   */
+  static async reviewProject(projectTitle: string, repoUrl: string, description: string): Promise<any> {
+    if (isMock || !ai) {
+      console.log('Using mock project reviewer...');
+      return {
+        score: 85,
+        strengths: [
+          'Excellent selection of libraries and tech stack',
+          'Good modular structure matching separation of concerns'
+        ],
+        improvements: [
+          'Add structured unit test files inside test/ folder',
+          'Ensure CORS origins are tightly configured instead of permitting wildcard *'
+        ],
+        verdict: 'Great work! You have successfully implemented the requirements and maintained clean code.'
+      };
+    }
+
+    const prompt = `
+      Perform a review of a software engineering student's project submission.
+      Project Title: ${projectTitle}
+      GitHub Repository URL: ${repoUrl}
+      Student Description of what they built: ${description}
+
+      Provide constructive, encouraging, but highly technical feedback on their design, clean code practices, security, and structure.
+      
+      Return a JSON conforming to:
+      {
+        "score": 85,
+        "strengths": ["list of 2-3 technical strengths"],
+        "improvements": ["list of 2-3 concrete technical improvements"],
+        "verdict": "A summary verdict/feedback of 2-3 sentences."
+      }
+    `;
+
+    try {
+      const response = await ai.models.generateContent({
+        model: this.modelName,
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          systemInstruction: 'You are an elite Senior Developer and Technical Lead. Output only pure, parseable JSON conforming exactly to the requested schema.',
+        },
+      });
+      const text = response.text;
+      if (!text) throw new Error('Empty response');
+      return JSON.parse(text);
+    } catch (error) {
+      console.error('Gemini Project Review Error:', error);
+      return {
+        score: 80,
+        strengths: [
+          'Strong foundational structure',
+          'Clean setup files and dependencies list'
+        ],
+        improvements: [
+          'Add error boundary handling middleware',
+          'Write helper documentation inside README'
+        ],
+        verdict: 'Review completed. Your project structure looks solid and ready for scaling.'
       };
     }
   }

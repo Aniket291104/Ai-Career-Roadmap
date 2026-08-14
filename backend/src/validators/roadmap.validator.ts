@@ -6,6 +6,7 @@ export const generateRoadmapSchema = z.object({
   dailyStudyHours: z.number().min(1).max(24).default(2),
   learningStyle: z.enum(['visual', 'practical', 'theoretical', 'mixed']).default('mixed'),
   preferredLanguage: z.string().default('English'),
+  targetDuration: z.number().min(1).max(12).default(3),
 });
 
 export const updateTaskStatusSchema = z.object({
