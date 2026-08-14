@@ -534,9 +534,87 @@ export class AIService {
     } catch (error) {
       console.error('Gemini Chat Error, falling back to mock response:', error);
       
+      const hasSentFirstQuiz = chatHistory.some(ch => 
+        ch.parts && ch.parts.some(p => p.text && p.text.includes('type of "null" in JavaScript'))
+      );
+
+      const quiz1 = `Sure! Here is a 5-question TypeScript multiple-choice quiz:
+
+1. What is the type of "null" in JavaScript?
+   A. null
+   B. object
+   C. undefined
+   D. string
+   (Correct Answer: B. object)
+
+2. Which keyword is used to declare a block-scoped variable that cannot be reassigned?
+   A. var
+   B. let
+   C. const
+   D. define
+   (Correct Answer: C. const)
+
+3. How do you specify that a variable 'x' can be either a string or a number in TypeScript?
+   A. let x: string & number;
+   B. let x: string | number;
+   C. let x: string || number;
+   D. let x: string && number;
+   (Correct Answer: B. string | number)
+
+4. What is the default access modifier for class members in TypeScript if not specified?
+   A. private
+   B. protected
+   C. public
+   D. internal
+   (Correct Answer: C. public)
+
+5. Which file is used to configure compilation settings for a TypeScript project?
+   A. package.json
+   B. tsconfig.json
+   C. webpack.config.js
+   D. tsconfig.js
+   (Correct Answer: B. tsconfig.json)`;
+
+      const quiz2 = `Sure! Here is another 5-question TypeScript multiple-choice quiz:
+
+1. Which of the following is NOT a primitive type in TypeScript?
+   A. string
+   B. boolean
+   C. tuple
+   D. number
+   (Correct Answer: C. tuple)
+
+2. What does the "readonly" modifier do in TypeScript?
+   A. Prevents writing to properties outside the constructor
+   B. Makes properties write-only
+   C. Speeds up webpack compilation
+   D. Restricts variables from being referenced
+   (Correct Answer: A. Prevents writing to properties outside the constructor)
+
+3. What is the purpose of the "any" type in TypeScript?
+   A. It forces strict compilation checks
+   B. It disables type-checking for the variable
+   C. It represents a string format only
+   D. It allows variables to be only null
+   (Correct Answer: B. It disables type-checking for the variable)
+
+4. Which utility type constructs a type with all properties of Type set to optional?
+   A. Required<Type>
+   B. Pick<Type, Keys>
+   C. Record<Keys, Type>
+   D. Partial<Type>
+   (Correct Answer: D. Partial<Type>)
+
+5. How do you write a type assertion in TypeScript?
+   A. let x = y as string;
+   B. let x = cast<string>(y);
+   C. let x = (string)y;
+   D. let x = y: string;
+   (Correct Answer: A. let x = y as string;)`;
+
       const responses: Record<string, string> = {
         'explain': 'REST APIs communicate synchronously over HTTP/1.1 using HTTP methods, whereas gRPC uses HTTP/2 with Protocol Buffers for high-performance, duplex, binary communication.',
-        'quiz': 'Sure! Here is a MC question:\nWhat is the type of "null" in JavaScript?\nA. null\nB. object\nC. undefined\n(Answer: B. object)',
+        'quiz': hasSentFirstQuiz ? quiz2 : quiz1,
         'resume': '1. Use clear headings (Skills, Experience, Projects).\n2. Write statements in Action-Result format.\n3. Integrate keywords like "TypeScript", "REST APIs", and "CI/CD".',
         'html': 'HTML (HyperText Markup Language) is the standard markup language used to create web pages. It defines the structure of web content using elements/tags like <h1>, <p>, and <div>.',
       };
