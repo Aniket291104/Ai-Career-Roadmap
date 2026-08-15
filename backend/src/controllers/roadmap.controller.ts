@@ -6,6 +6,7 @@ import { Task } from '../models/Task';
 import { AIService } from '../services/ai.service';
 import { generateRoadmapSchema, updateTaskStatusSchema } from '../validators/roadmap.validator';
 import { IAuthRequest } from '../middlewares/auth.middleware';
+import { QuestController } from './quest.controller';
 import { z } from 'zod';
 
 const resourceLinkSchema = z.object({
@@ -225,6 +226,9 @@ export class RoadmapController {
 
       // If task was marked completed, log XP points, update user streak, and log daily activity heatmap
       if (taskStatusChangedToCompleted) {
+        // Auto-complete roadmap daily quest
+        await QuestController.completeQuest(req.user.userId, 'roadmap_task');
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
