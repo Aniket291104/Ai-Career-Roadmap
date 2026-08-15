@@ -27,6 +27,7 @@ import paymentRoutes from './routes/payment.routes';
 import newsletterRoutes from './routes/newsletter.routes';
 import contactRoutes from './routes/contact.routes';
 import codingRoutes from './routes/coding-assessment.routes';
+import questRoutes from './routes/quest.routes';
 
 // Load environment variables
 
@@ -147,6 +148,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/coding', codingRoutes);
+app.use('/api/quests', questRoutes);
 
 // Socket.io event handling
 io.on('connection', (socket) => {
