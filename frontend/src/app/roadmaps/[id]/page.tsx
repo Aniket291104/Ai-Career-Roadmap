@@ -26,7 +26,10 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Trophy
+  Trophy,
+  Plus,
+  Minus,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -121,6 +124,51 @@ export default function RoadmapDetailPage({ params }: { params: Promise<{ id: st
   const [resourceFilter, setResourceFilter] = useState<'all' | 'youtube' | 'docs' | 'notes'>('all');
 
   const { triggerTaskCompleted } = useCelebration();
+
+  // Zoom & Pan states for the Mindmap Canvas
+  const [zoomScale, setZoomScale] = useState(0.85);
+  const [panX, setPanX] = useState(50);
+  const [panY, setPanY] = useState(50);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (e.button !== 0) return;
+    setIsPanning(true);
+    setPanStart({
+      x: e.clientX - panX,
+      y: e.clientY - panY,
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!isPanning) return;
+    setPanX(e.clientX - panStart.x);
+    setPanY(e.clientY - panStart.y);
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    const zoomFactor = 0.05;
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const newScale = Math.max(0.3, Math.min(2.0, zoomScale + direction * zoomFactor));
+    setZoomScale(parseFloat(newScale.toFixed(2)));
+  };
+
+  const handleZoomIn = () => {
+    setZoomScale(prev => Math.min(2.0, prev + 0.1));
+  };
+  const handleZoomOut = () => {
+    setZoomScale(prev => Math.max(0.3, prev - 0.1));
+  };
+  const handleResetZoom = () => {
+    setZoomScale(0.85);
+    setPanX(50);
+    setPanY(50);
+  };
 
   const toggleMonth = (mNum: number) => {
     setExpandedMonths((prev) => ({ ...prev, [mNum]: !prev[mNum] }));
@@ -641,84 +689,319 @@ export default function RoadmapDetailPage({ params }: { params: Promise<{ id: st
           )}
 
           {/* TAB 2: INTERACTIVE PATHWAY MINDMAP */}
-          {activeTab === 'mindmap' && (
-            <motion.div
-              key="mindmap"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              className="p-6 rounded-2xl glass-card relative overflow-hidden"
-            >
-              <div className="mb-6">
-                <h3 className="font-bold text-lg text-primary flex items-center gap-2">
-                  <Map className="w-5 h-5" />
-                  <span>Visual Path Map</span>
-                </h3>
-                <p className="text-xs text-muted-foreground">Click a month card or week pill to focus details and check off daily study steps.</p>
-              </div>
+          {activeTab === 'mindmap' && (() => {
+            // Dynamic coordinates calculation
+            let weekIndex = 0;
+            const weekHeight = 100;
+            const weekNodes: Array<{
+              key: string;
+              monthNumber: number;
+              weekNumber: number;
+              title: string;
+              x: number;
+              y: number;
+              completionRatio: number;
+              completedCount: number;
+              totalCount: number;
+            }> = [];
 
-              {/* Pathway Flow Layout */}
-              <div className="flex flex-col gap-12 relative items-center py-6">
+            const monthNodes: Array<{
+              monthNumber: number;
+              title: string;
+              description: string;
+              x: number;
+              y: number;
+              weeksKeys: string[];
+            }> = [];
+
+            roadmap.timeline.forEach((month) => {
+              const monthWeeksKeys: string[] = [];
+              month.weeks.forEach((week) => {
+                const weekKey = `${month.monthNumber}-${week.weekNumber}`;
+                monthWeeksKeys.push(weekKey);
                 
-                {/* Flow lines in background */}
-                <div className="absolute top-12 bottom-12 w-0.5 bg-gradient-to-b from-primary/30 via-accent/30 to-primary/30 z-0 hidden md:block" />
+                const totalCount = week.dailyTasks.length;
+                const completedCount = week.dailyTasks.filter(t => t.status === 'completed').length;
+                const completionRatio = totalCount > 0 ? completedCount / totalCount : 0;
 
-                {roadmap.timeline.map((month, mIdx) => (
-                  <div key={month.monthNumber} className="w-full max-w-4xl relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-12">
-                    
-                    {/* Month Node Card */}
-                    <div className="w-full md:w-80 p-5 rounded-2xl border border-primary/20 bg-primary/5 backdrop-blur shadow-lg text-center md:text-left shrink-0">
-                      <div className="inline-block px-2.5 py-0.5 rounded bg-primary/20 text-[10px] font-bold text-primary mb-2 uppercase">
-                        Month {month.monthNumber}
-                      </div>
-                      <h4 className="font-extrabold text-base leading-tight text-foreground">{month.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed font-semibold">{month.description}</p>
+                const y = 80 + weekIndex * weekHeight;
+                weekNodes.push({
+                  key: weekKey,
+                  monthNumber: month.monthNumber,
+                  weekNumber: week.weekNumber,
+                  title: week.title,
+                  x: 680,
+                  y: y,
+                  completionRatio,
+                  completedCount,
+                  totalCount
+                });
+                
+                weekIndex++;
+              });
+
+              let monthY = 80;
+              if (monthWeeksKeys.length > 0) {
+                const monthWeeks = weekNodes.filter(w => monthWeeksKeys.includes(w.key));
+                const minY = Math.min(...monthWeeks.map(w => w.y));
+                const maxY = Math.max(...monthWeeks.map(w => w.y));
+                monthY = (minY + maxY) / 2;
+              }
+
+              monthNodes.push({
+                monthNumber: month.monthNumber,
+                title: month.title,
+                description: month.description,
+                x: 350,
+                y: monthY,
+                weeksKeys: monthWeeksKeys
+              });
+            });
+
+            let rootY = 150;
+            if (monthNodes.length > 0) {
+              const minY = Math.min(...monthNodes.map(m => m.y));
+              const maxY = Math.max(...monthNodes.map(m => m.y));
+              rootY = (minY + maxY) / 2;
+            }
+
+            return (
+              <motion.div
+                key="mindmap"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                className="p-6 rounded-2xl glass-card relative overflow-hidden"
+              >
+                <div className="mb-6 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-lg text-primary flex items-center gap-2">
+                      <Map className="w-5 h-5" />
+                      <span>Visual Mindmap Canvas</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Click and drag to pan, use the scroll wheel to zoom, or click a week node to view detailed timeline steps.</p>
+                  </div>
+                </div>
+
+                {/* Canvas Container */}
+                <div className="relative w-full h-[650px] rounded-2xl border border-border/40 bg-slate-950/30 backdrop-blur-sm overflow-hidden select-none cursor-grab active:cursor-grabbing">
+                  {/* Floating Controls */}
+                  <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-slate-900/85 backdrop-blur border border-border/30 p-1.5 rounded-xl shadow-lg">
+                    <button
+                      onClick={handleZoomIn}
+                      className="p-1.5 hover:bg-muted/60 rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Zoom In"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleZoomOut}
+                      className="p-1.5 hover:bg-muted/60 rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Zoom Out"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-4 bg-border/30" />
+                    <button
+                      onClick={handleResetZoom}
+                      className="p-1.5 hover:bg-muted/60 rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Reset View"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Floating Legend */}
+                  <div className="absolute bottom-4 left-4 z-20 bg-slate-900/85 backdrop-blur border border-border/30 px-3.5 py-2.5 rounded-xl shadow-lg flex flex-col gap-2 text-[10px] font-bold text-muted-foreground">
+                    <div className="text-xs text-foreground border-b border-border/20 pb-1 mb-0.5">Status Legend</div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 border border-emerald-400" />
+                      <span>Completed Weeks (100% tasks)</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 border border-amber-400" />
+                      <span>In Progress Weeks (partially done)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-600 border border-slate-500" />
+                      <span>Pending Weeks (0% tasks)</span>
+                    </div>
+                  </div>
 
-                    {/* Weeks connected nodes */}
-                    <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {month.weeks.map((week) => {
-                        const weekKey = `${month.monthNumber}-${week.weekNumber}`;
-                        const isExpanded = !!expandedWeeks[weekKey];
-                        
+                  {/* SVG Canvas Area */}
+                  <svg
+                    width="100%"
+                    height="100%"
+                    className="w-full h-full"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onWheel={handleWheel}
+                  >
+                    <defs>
+                      <linearGradient id="glowing-connector" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.5" />
+                        <stop offset="50%" stopColor="#a855f7" stopOpacity="0.75" />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0.5" />
+                      </linearGradient>
+                      <filter id="svg-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    </defs>
+
+                    {/* Transformable Canvas Group */}
+                    <g 
+                      transform={`translate(${panX}, ${panY}) scale(${zoomScale})`} 
+                      style={{ transformOrigin: '0px 0px' }}
+                      className="transition-transform duration-75 ease-out"
+                    >
+                      {/* Connections: Root to Months */}
+                      {monthNodes.map((month) => {
+                        const pathD = `M ${50 + 220} ${rootY} C ${(50 + 220 + month.x) / 2} ${rootY}, ${(50 + 220 + month.x) / 2} ${month.y}, ${month.x} ${month.y}`;
                         return (
+                          <path
+                            key={`path-root-${month.monthNumber}`}
+                            d={pathD}
+                            fill="none"
+                            stroke="url(#glowing-connector)"
+                            strokeWidth="2"
+                            filter="url(#svg-glow)"
+                            className="opacity-60 hover:opacity-100 transition-opacity duration-300"
+                          />
+                        );
+                      })}
+
+                      {/* Connections: Months to Weeks */}
+                      {monthNodes.map((month) => (
+                        <React.Fragment key={`paths-month-${month.monthNumber}`}>
+                          {month.weeksKeys.map((weekKey) => {
+                            const week = weekNodes.find((w) => w.key === weekKey);
+                            if (!week) return null;
+                            const pathD = `M ${month.x + 240} ${month.y} C ${(month.x + 240 + week.x) / 2} ${month.y}, ${(month.x + 240 + week.x) / 2} ${week.y}, ${week.x} ${week.y}`;
+                            return (
+                              <path
+                                key={`path-week-${weekKey}`}
+                                d={pathD}
+                                fill="none"
+                                stroke="url(#glowing-connector)"
+                                strokeWidth="2"
+                                filter="url(#svg-glow)"
+                                className="opacity-40 hover:opacity-90 transition-opacity duration-300"
+                              />
+                            );
+                          })}
+                        </React.Fragment>
+                      ))}
+
+                      {/* Root Node rendering */}
+                      <foreignObject
+                        x={50}
+                        y={rootY - 40}
+                        width={220}
+                        height={80}
+                      >
+                        <div className="w-full h-full p-4 rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/15 to-purple-600/15 backdrop-blur-md flex flex-col justify-center items-center text-center shadow-lg relative overflow-hidden group select-none">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <Sparkles className="w-4 h-4 text-primary mb-1 animate-pulse" />
+                          <span className="text-[9px] font-extrabold uppercase tracking-widest text-primary">Active Goal</span>
+                          <h4 className="font-extrabold text-[12px] leading-tight text-foreground truncate max-w-full">{roadmap.title}</h4>
+                        </div>
+                      </foreignObject>
+
+                      {/* Month Nodes rendering */}
+                      {monthNodes.map((month) => (
+                        <foreignObject
+                          key={`node-month-${month.monthNumber}`}
+                          x={month.x}
+                          y={month.y - 45}
+                          width={240}
+                          height={90}
+                        >
+                          <div className="w-full h-full p-3.5 rounded-2xl border border-primary/25 bg-card/45 backdrop-blur-md flex flex-col justify-between shadow-md relative overflow-hidden group select-none hover:scale-[1.02] hover:border-primary/50 transition-all duration-300">
+                            <div className="absolute -top-12 -left-12 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
+                            <div>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-[9px] font-extrabold uppercase text-primary/80 tracking-wide">Month {month.monthNumber}</span>
+                                <span className="text-[9px] font-bold text-muted-foreground">{month.weeksKeys.length} Weeks</span>
+                              </div>
+                              <h5 className="font-extrabold text-xs text-foreground/90 truncate leading-tight">{month.title}</h5>
+                              <p className="text-[9px] text-muted-foreground line-clamp-2 mt-1 leading-normal font-medium">{month.description}</p>
+                            </div>
+                          </div>
+                        </foreignObject>
+                      ))}
+
+                      {/* Week Nodes rendering */}
+                      {weekNodes.map((week) => (
+                        <foreignObject
+                          key={`node-week-${week.key}`}
+                          x={week.x}
+                          y={week.y - 40}
+                          width={240}
+                          height={80}
+                        >
                           <div 
-                            key={week.weekNumber} 
                             onClick={() => {
-                              toggleWeek(month.monthNumber, week.weekNumber);
-                              if (!expandedMonths[month.monthNumber]) {
-                                toggleMonth(month.monthNumber);
+                              toggleWeek(week.monthNumber, week.weekNumber);
+                              if (!expandedMonths[week.monthNumber]) {
+                                toggleMonth(week.monthNumber);
                               }
                               setActiveTab('timeline');
-                              // Scroll into view
                               setTimeout(() => {
-                                const el = document.getElementById(`week-header-${weekKey}`);
+                                const el = document.getElementById(`week-header-${week.key}`);
                                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                               }, 100);
                             }}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between hover:scale-105 active:scale-95 hover:shadow-md ${isExpanded ? 'border-primary/45 bg-card shadow-sm shadow-primary/5' : 'border-border/40 bg-muted/15'}`}
+                            className={`w-full h-full p-3 rounded-2xl border backdrop-blur-md flex flex-col justify-between shadow-sm cursor-pointer select-none transition-all duration-300 hover:scale-[1.03] hover:shadow-md ${
+                              week.completionRatio === 1 
+                                ? 'border-emerald-500/35 bg-emerald-500/5 hover:border-emerald-500/60 shadow-emerald-500/5' 
+                                : week.completionRatio > 0 
+                                ? 'border-amber-500/35 bg-amber-500/5 hover:border-amber-500/60 shadow-amber-500/5' 
+                                : 'border-border/40 bg-muted/10 hover:border-primary/50'
+                            }`}
                           >
                             <div>
-                              <div className="flex justify-between items-center mb-1.5">
-                                <span className="text-[10px] uppercase font-bold text-muted-foreground">Week {week.weekNumber}</span>
-                                <span className="w-2.5 h-2.5 rounded-full bg-primary/20 border border-primary/50 animate-pulse" />
+                              <div className="flex justify-between items-center mb-0.5">
+                                <span className="text-[8px] font-bold uppercase text-muted-foreground">Week {week.weekNumber}</span>
+                                {week.completionRatio === 1 ? (
+                                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                                ) : week.completionRatio > 0 ? (
+                                  <span className="text-[8px] font-extrabold text-amber-400 px-1 bg-amber-400/10 rounded">
+                                    {Math.round(week.completionRatio * 100)}%
+                                  </span>
+                                ) : (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                                )}
                               </div>
-                              <h5 className="font-bold text-xs leading-tight text-foreground/95">{week.title}</h5>
+                              <h5 className={`font-bold text-xs leading-snug truncate ${
+                                week.completionRatio === 1 
+                                  ? 'text-emerald-100' 
+                                  : week.completionRatio > 0 
+                                  ? 'text-amber-100' 
+                                  : 'text-foreground/90'
+                              }`}>
+                                {week.title}
+                              </h5>
                             </div>
-                            <span className="text-[9px] text-primary font-bold mt-4 flex items-center gap-1">
-                              <span>Go to timeline details</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </span>
+                            
+                            <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-border/10 text-[8px] text-muted-foreground font-bold">
+                              <span>{week.completedCount}/{week.totalCount} Tasks Done</span>
+                              <span className="text-primary hover:underline flex items-center gap-0.5">
+                                Explore <ChevronRight className="w-2.5 h-2.5" />
+                              </span>
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        </foreignObject>
+                      ))}
 
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                    </g>
+                  </svg>
+                </div>
+              </motion.div>
+            );
+          })()}
 
           {/* TAB 3: RESOURCES EXPLORER HUB */}
           {activeTab === 'resources' && (
