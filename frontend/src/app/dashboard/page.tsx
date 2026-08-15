@@ -94,6 +94,7 @@ export default function DashboardPage() {
   const [layout, setLayout] = useState<Widget[]>([
     { id: 'streak', title: 'Active Streak', visible: true, size: 'sm' },
     { id: 'xp', title: 'Experience Points', visible: true, size: 'sm' },
+    { id: 'quests', title: 'Daily Quests', visible: true, size: 'md' },
     { id: 'tasks', title: 'Tasks Progress', visible: true, size: 'sm' },
     { id: 'consistency', title: 'Consistency Score', visible: true, size: 'sm' },
     { id: 'leetcode', title: 'LeetCode Stats', visible: true, size: 'full' },
@@ -106,6 +107,44 @@ export default function DashboardPage() {
 
   // Real activity feed from backend
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+
+  // Daily Quests States & Actions
+  const [quests, setQuests] = useState<any[]>([]);
+  const [questsLoading, setQuestsLoading] = useState(true);
+
+  const fetchQuests = async () => {
+    try {
+      const res = await api.get('/quests/daily');
+      setQuests(res.data.quests);
+    } catch (err) {
+      console.error('Failed to load daily quests:', err);
+    } finally {
+      setQuestsLoading(false);
+    }
+  };
+
+  const handleClaimQuest = async (questType: string) => {
+    try {
+      const res = await api.post('/quests/claim', { questType });
+      setQuests(res.data.quests);
+      if (data) {
+        setData((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            user: {
+              ...prev.user,
+              xpPoints: res.data.xpPoints
+            }
+          };
+        });
+      }
+      triggerConfetti();
+      toast.success(res.data.message);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to claim XP.');
+    }
+  };
 
   // Load stats and layout preference
   useEffect(() => {
@@ -174,6 +213,7 @@ export default function DashboardPage() {
     }
 
     fetchStats();
+    fetchQuests();
   }, []);
 
   const saveLayout = (newLayout: Widget[]) => {
@@ -203,6 +243,7 @@ export default function DashboardPage() {
     const defaults: Widget[] = [
       { id: 'streak', title: 'Active Streak', visible: true, size: 'sm' },
       { id: 'xp', title: 'Experience Points', visible: true, size: 'sm' },
+      { id: 'quests', title: 'Daily Quests', visible: true, size: 'md' },
       { id: 'tasks', title: 'Tasks Progress', visible: true, size: 'sm' },
       { id: 'consistency', title: 'Consistency Score', visible: true, size: 'sm' },
       { id: 'leetcode', title: 'LeetCode Stats', visible: true, size: 'full' },
@@ -396,6 +437,103 @@ export default function DashboardPage() {
                       <span className="text-xs text-muted-foreground font-semibold">Experience Points</span>
                       <h3 className="text-2xl font-bold mt-1">{data.user.xpPoints} XP</h3>
                       <p className="text-[10px] text-muted-foreground mt-0.5 font-bold">Earn points to unlock badges</p>
+                    </div>
+                  </div>
+                )}
+
+                {widget.id === 'quests' && (
+                  <div className="p-6 rounded-2xl glass-card h-full min-h-[300px] flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
+                          <span>Daily Quests</span>
+                        </h3>
+                        <span className="text-[10px] bg-primary/10 border border-primary/20 text-primary px-2 py-0.5 rounded font-bold">
+                          {quests.filter(q => q.isCompleted).length}/{quests.length} Done
+                        </span>
+                      </div>
+
+                      {questsLoading ? (
+                        <div className="py-12 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                      ) : quests.length > 0 ? (
+                        <div className="space-y-3.5">
+                          {quests.map((q) => (
+                            <div 
+                              key={q.questType}
+                              className={`p-3 rounded-xl border flex items-center justify-between gap-4 transition-all duration-300 ${
+                                q.isClaimed 
+                                  ? 'border-emerald-500/20 bg-emerald-500/5 opacity-60' 
+                                  : q.isCompleted 
+                                  ? 'border-yellow-500/35 bg-yellow-500/5 shadow-sm shadow-yellow-500/5 animate-pulse' 
+                                  : 'border-border/30 bg-muted/5'
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <h4 className={`text-xs font-bold ${q.isClaimed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                    {q.title}
+                                  </h4>
+                                  <span className="text-[9px] font-extrabold text-yellow-500 bg-yellow-500/10 px-1 rounded">
+                                    +{q.xpReward} XP
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed font-medium">
+                                  {q.description}
+                                </p>
+                              </div>
+
+                              <div className="shrink-0">
+                                {q.isClaimed ? (
+                                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-1 rounded-lg">
+                                    Claimed ✓
+                                  </span>
+                                ) : q.isCompleted ? (
+                                  <button
+                                    onClick={() => handleClaimQuest(q.questType)}
+                                    className="px-2.5 py-1 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-[9px] font-extrabold rounded-lg shadow transition-all active:scale-95 cursor-pointer"
+                                  >
+                                    Claim XP
+                                  </button>
+                                ) : (
+                                  <div className="flex flex-col items-end gap-1">
+                                    <span className="text-[9px] font-bold text-muted-foreground bg-muted/60 border border-border/20 px-2 py-1 rounded-lg">
+                                      In Progress
+                                    </span>
+                                    {q.questType === 'roadmap_task' && data.activeRoadmap && (
+                                      <Link 
+                                        href={`/roadmaps/${data.activeRoadmap._id}`}
+                                        className="text-[8px] font-extrabold text-primary hover:underline"
+                                      >
+                                        Go to Roadmap →
+                                      </Link>
+                                    )}
+                                    {q.questType === 'coding_challenge' && (
+                                      <Link 
+                                        href="/coding-assessment"
+                                        className="text-[8px] font-extrabold text-primary hover:underline"
+                                      >
+                                        Go to Sandbox →
+                                      </Link>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-xs text-muted-foreground">
+                          No quests generated today.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-[9px] text-muted-foreground font-bold border-t border-border/20 pt-3 mt-4 flex items-center justify-between">
+                      <span>Quests refresh daily at midnight UTC</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
                     </div>
                   </div>
                 )}
