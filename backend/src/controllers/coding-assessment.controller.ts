@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CodingAssessment } from '../models/CodingAssessment';
 import { User } from '../models/User';
 import { AIService } from '../services/ai.service';
+import { QuestController } from './quest.controller';
 import crypto from 'crypto';
 
 export class CodingAssessmentController {
@@ -164,6 +165,11 @@ export class CodingAssessmentController {
         }
       }
 
+      // Auto-complete coding sandbox daily quest
+      if (req.user?.userId) {
+        await QuestController.completeQuest(req.user.userId, 'coding_challenge');
+      }
+
       res.status(200).json({
         status: 'success',
         outputs,
@@ -253,6 +259,11 @@ export class CodingAssessmentController {
       assessment.isCompleted = allPassed;
       assessment.aiReview = aiReview;
       await assessment.save();
+
+      // Auto-complete coding sandbox daily quest
+      if (req.user?.userId) {
+        await QuestController.completeQuest(req.user.userId, 'coding_challenge');
+      }
 
       res.status(200).json({
         message: allPassed ? 'Congratulations! Solution accepted.' : 'Submission completed. Some test cases failed.',
