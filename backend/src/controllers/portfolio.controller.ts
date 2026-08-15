@@ -51,12 +51,30 @@ export class PortfolioController {
           headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
         }
 
-        const githubRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=10&sort=updated`, {
-          headers
-        });
+        let page = 1;
+        let keepFetching = true;
+        let allGithubRepos: any[] = [];
 
-        if (Array.isArray(githubRes.data)) {
-          reposList = githubRes.data.map((repo: any) => ({
+        while (keepFetching) {
+          const githubRes = await axios.get(
+            `https://api.github.com/users/${username}/repos?per_page=100&page=${page}&sort=updated`,
+            { headers }
+          );
+
+          if (Array.isArray(githubRes.data) && githubRes.data.length > 0) {
+            allGithubRepos = allGithubRepos.concat(githubRes.data);
+            if (githubRes.data.length < 100) {
+              keepFetching = false;
+            } else {
+              page++;
+            }
+          } else {
+            keepFetching = false;
+          }
+        }
+
+        if (allGithubRepos.length > 0) {
+          reposList = allGithubRepos.map((repo: any) => ({
             name: repo.name,
             stars: repo.stargazers_count || 0,
             forks: repo.forks_count || 0,
@@ -65,7 +83,7 @@ export class PortfolioController {
           }));
 
           // Calculate language percentages
-          githubRes.data.forEach((repo: any) => {
+          allGithubRepos.forEach((repo: any) => {
             if (repo.language) {
               aggregatedLanguages[repo.language] = (aggregatedLanguages[repo.language] || 0) + 1;
             }
