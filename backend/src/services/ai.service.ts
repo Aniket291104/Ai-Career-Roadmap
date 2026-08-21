@@ -631,319 +631,290 @@ export class AIService {
   // --- MOCK DATA FALLBACKS ---
 
   private static getMockRoadmap(goal: string, skills: string[], style: string, lang: string): any {
+    // Determine difficulty based on user's existing skills
+    const hasSkills = skills && skills.length > 0;
+    const difficulty = hasSkills ? 'intermediate' : 'beginner';
+
+    // Build a goal-specific tech curriculum
+    const goalConfig = AIService.getGoalConfig(goal);
+    const userSkillsLabel = hasSkills ? skills.join(', ') : 'No prior skills (starting from scratch)';
+    const coreTopics = goalConfig.coreTopics;
+    const techStack = goalConfig.techStack;
+    const learningResources = goalConfig.resources;
+
+    // Helper: build a day task
+    const makeDay = (dayNum: number, topic: string, desc: string, practice: string, links: any[]) => ({
+      dayNumber: dayNum,
+      title: topic,
+      description: desc,
+      codingPractice: practice,
+      links,
+    });
+
     return {
-      title: `${goal} Masterclass Roadmap`,
+      title: `${goal} Career Roadmap`,
       targetRole: goal,
-      difficulty: 'intermediate',
-      estimatedDuration: '4 Weeks',
-      skillsCovered: [...new Set(['TypeScript', 'Core Architectures', ...skills])],
+      difficulty,
+      estimatedDuration: '4 Months',
+      skillsCovered: [...new Set([...coreTopics.slice(0, 6), ...(hasSkills ? skills : [])])],
       timeline: [
         {
           monthNumber: 1,
-          title: 'Foundational Mastery',
-          description: `Acquire and refine core principles for ${goal} matching your learning style: ${style}.`,
+          title: `Month 1: ${goalConfig.month1Title}`,
+          description: `Build the foundations for becoming a ${goal}. ${hasSkills ? `You already know: ${userSkillsLabel}. We'll build on these.` : 'Starting fresh — we cover everything from the basics up.'}`,
           weeks: [
             {
               weekNumber: 1,
-              title: 'Module 1: Setting up Systems',
-              description: 'Focus on setting up workspace templates and coding structures.',
-              learningGoals: ['Understand core folder layouts', 'Write clean configuration files'],
-              dailyTasks: [
-                {
-                  dayNumber: 1,
-                  title: 'Config settings',
-                  description: 'Setup env files, package manifests, and TS settings.',
-                  codingPractice: 'Write a basic script loading environment profiles.',
-                  links: [
-                    { title: 'Node.js Env Variables Docs', url: 'https://nodejs.org/docs/latest/api/cli.html', type: 'docs' },
-                    { title: 'System Environment Setup Notes', url: 'https://devhints.io/bash', type: 'notes' }
-                  ]
-                },
-                {
-                  dayNumber: 2,
-                  title: 'Express routes',
-                  description: 'Design modular endpoints using routers.',
-                  codingPractice: 'Create a ping/status path handling JSON request payloads.',
-                  links: [
-                    { title: 'Express Routing Guide Docs', url: 'https://expressjs.com/en/guide/routing.html', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 3,
-                  title: 'State trackers',
-                  description: 'Create memory states and caching helpers.',
-                  codingPractice: 'Setup a cache Map with expiration keys.',
-                  links: [
-                    { title: 'ES6 Map & Set Quick Reference Notes', url: 'https://cheatsheets.shecodes.io/javascript/maps', type: 'notes' }
-                  ]
-                },
-                {
-                  dayNumber: 4,
-                  title: 'Middleware logging',
-                  description: 'Implement logging request interceptors using morgan or custom logs.',
-                  codingPractice: 'Write a log format middleware printing method and duration.',
-                  links: [
-                    { title: 'Express Middleware Docs', url: 'https://expressjs.com/en/guide/using-middleware.html', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 5,
-                  title: 'Error handling',
-                  description: 'Build a global uncaught exception error handler.',
-                  codingPractice: 'Define an error class extending Error and returning custom status codes.',
-                  links: [
-                    { title: 'Express Error Handling Docs', url: 'https://expressjs.com/en/guide/error-handling.html', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 6,
-                  title: 'Environment verification',
-                  description: 'Validate required system configurations on start.',
-                  codingPractice: 'Assert database URI presence in early process boot.',
-                  links: [
-                    { title: 'Node.js Process Env Docs', url: 'https://nodejs.org/api/process.html#processenv', type: 'docs' },
-                    { title: 'Express App Setup (Chai aur Code)', url: 'https://www.youtube.com/watch?v=EH3vGeqe5B4', type: 'youtube' }
-                  ]
-                }
+              title: `Week 1: ${coreTopics[0]} Fundamentals`,
+              description: `Deep dive into ${coreTopics[0]} as the foundation for your ${goal} path.`,
+              learningGoals: [
+                `Understand the core concepts of ${coreTopics[0]}`,
+                `Set up your development environment`,
+                'Write and run your first programs',
               ],
-              projects: [
-                {
-                  title: 'Module Sandbox API',
-                  description: 'Construct a boilerplate service featuring logging and authentication middleware.',
-                  techStack: ['TypeScript', 'Express', 'Node.js'],
-                  difficulty: 'beginner',
-                  estimatedHours: 6,
-                  folderStructure: 'src/\n  config/\n  routes/\n  app.ts',
-                  deploymentGuide: 'Compile typescript (tsc) and launch npm start'
-                }
-              ]
+              dailyTasks: [
+                makeDay(1, `Introduction to ${coreTopics[0]}`, `Overview of ${coreTopics[0]} and why it matters for ${goal}. Install tools and set up your dev environment.`, `Write a "Hello World" program and experiment with basic syntax in ${coreTopics[0]}.`, [learningResources[0], learningResources[1]]),
+                makeDay(2, `${coreTopics[0]} Core Syntax`, `Study variables, data types, operators, and control flow in ${coreTopics[0]}.`, `Write 5 small programs using conditionals and loops.`, [learningResources[0]]),
+                makeDay(3, `Functions & Modules in ${coreTopics[0]}`, `Learn how to structure reusable functions and organize code into modules.`, `Build a calculator module with add, subtract, multiply, divide functions.`, [learningResources[1]]),
+                makeDay(4, `Data Structures for ${goal}`, `Explore arrays, objects/maps and when to use each for building ${goal} applications.`, `Implement a student grade tracker using arrays and objects.`, [learningResources[2]]),
+                makeDay(5, `Problem Solving with ${coreTopics[0]}`, `Practice debugging and solving algorithmic problems relevant to your career path.`, `Solve 3 easy problems on LeetCode or HackerRank using ${coreTopics[0]}.`, [learningResources[2]]),
+                makeDay(6, `Mini Project: ${goalConfig.week1Project.title}`, goalConfig.week1Project.description, goalConfig.week1Project.practice, [learningResources[0], learningResources[1]]),
+              ],
+              projects: [{
+                title: goalConfig.week1Project.title,
+                description: goalConfig.week1Project.description,
+                techStack: techStack.slice(0, 2),
+                difficulty: 'beginner',
+                estimatedHours: 5,
+                folderStructure: goalConfig.week1Project.folderStructure,
+                deploymentGuide: 'Run locally and test in browser or terminal.',
+              }],
             },
             {
               weekNumber: 2,
-              title: 'Module 2: Database Schemas',
-              description: 'Connect databases and organize collection indices.',
-              learningGoals: ['Create models with validator hooks', 'Define relations'],
+              title: `Week 2: ${coreTopics[1]}`,
+              description: `Master ${coreTopics[1]} which is essential for the ${goal} role.`,
+              learningGoals: [`Apply ${coreTopics[1]} in real projects`, 'Understand best practices', 'Handle common use cases'],
               dailyTasks: [
-                {
-                  dayNumber: 1,
-                  title: 'Design database entities',
-                  description: 'Create database collection schemas with Mongoose or SQL guides.',
-                  codingPractice: 'Define schema validation for email fields.',
-                  links: [
-                    { title: 'MongoDB Data Modeling Guide', url: 'https://www.mongodb.com/docs/manual/core/data-modeling-introduction/', type: 'docs' },
-                    { title: 'Mongoose Schema Cheat Sheet Guide', url: 'https://devhints.io/mongoose', type: 'notes' }
-                  ]
-                },
-                {
-                  dayNumber: 2,
-                  title: 'Querying records',
-                  description: 'Construct sorting, paging and search aggregates.',
-                  codingPractice: 'Build a search query resolving terms with regex filters.',
-                  links: [
-                    { title: 'Mongoose Queries Manual', url: 'https://mongoosejs.com/docs/queries.html', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 3,
-                  title: 'Redis cache layering',
-                  description: 'Add cache layers to database query routes.',
-                  codingPractice: 'Write an express route checking cache before database queries.',
-                  links: [
-                    { title: 'Redis with Node.js in Hindi (Piyush Garg)', url: 'https://www.youtube.com/watch?v=jgpVdJ2S4SI', type: 'youtube' }
-                  ]
-                },
-                {
-                  dayNumber: 4,
-                  title: 'Schema validator hooks',
-                  description: 'Add lifecycle validation hooks checking for duplicates.',
-                  codingPractice: 'Write pre-save checks in Mongoose schema.',
-                  links: [
-                    { title: 'Mongoose Middleware Manual', url: 'https://mongoosejs.com/docs/middleware.html', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 5,
-                  title: 'Indexing optimization',
-                  description: 'Setup custom database indices to speed up common reads.',
-                  codingPractice: 'Create a compound index on userId and createdAt.',
-                  links: [
-                    { title: 'MongoDB Indexes Guide', url: 'https://www.mongodb.com/docs/manual/indexes/', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 6,
-                  title: 'Connection resilience',
-                  description: 'Configure auto-reconnect logic and connection timeouts.',
-                  codingPractice: 'Set mongoose option serverSelectionTimeoutMS to 5000.',
-                  links: [
-                    { title: 'Mongoose Connections Guide', url: 'https://mongoosejs.com/docs/connections.html', type: 'docs' }
-                  ]
-                }
+                makeDay(1, `${coreTopics[1]} Overview`, `Introduction to ${coreTopics[1]}: what it is, why it's used, and where it fits in the ${goal} ecosystem.`, `Set up a sample project and write basic ${coreTopics[1]} code.`, [learningResources[1]]),
+                makeDay(2, `Core ${coreTopics[1]} Patterns`, `Learn the most important patterns and techniques used in ${coreTopics[1]}.`, `Implement 2 design patterns relevant to ${coreTopics[1]}.`, [learningResources[2]]),
+                makeDay(3, `${coreTopics[1]} in ${goal} context`, `See how ${coreTopics[1]} is used specifically in real-world ${goal} applications.`, `Build a feature using ${coreTopics[1]} that you'd find in a production ${goal} app.`, [learningResources[0]]),
+                makeDay(4, `Debugging & Best Practices`, `Learn how to debug ${coreTopics[1]} code and follow industry best practices.`, `Debug a broken ${coreTopics[1]} snippet and fix all errors.`, [learningResources[1]]),
+                makeDay(5, `Testing ${coreTopics[1]} Code`, `Write unit tests for your ${coreTopics[1]} components/modules.`, `Write 3 unit tests for functions you built earlier this week.`, [learningResources[2]]),
+                makeDay(6, `Review & Consolidation`, `Review the week's concepts and build a small integration project.`, `Combine ${coreTopics[0]} and ${coreTopics[1]} in a single mini app.`, [learningResources[0], learningResources[2]]),
               ],
-              projects: [
-                {
-                  title: 'Data Store API',
-                  description: 'Build a relational CRUD manager with indexing logs and secure JWT verification.',
-                  techStack: ['Mongoose', 'MongoDB', 'JWT'],
-                  difficulty: 'intermediate',
-                  estimatedHours: 8,
-                  folderStructure: 'models/\n  User.ts\n  Task.ts',
-                  deploymentGuide: 'Link MongoDB Atlas URI and run development npm run dev'
-                }
-              ]
+              projects: [{
+                title: `${coreTopics[1]} Practice App`,
+                description: `A hands-on application demonstrating your ${coreTopics[1]} skills in the context of ${goal}.`,
+                techStack: techStack.slice(0, 3),
+                difficulty,
+                estimatedHours: 6,
+                folderStructure: `src/\n  ${coreTopics[1].toLowerCase().replace(/\s+/g, '-')}/\n  index.js`,
+                deploymentGuide: 'Deploy on Vercel or Netlify for free.',
+              }],
             },
             {
               weekNumber: 3,
-              title: 'Module 3: Authentication & Security',
-              description: 'Ensure route security and session state validation.',
-              learningGoals: ['Understand token rotation', 'Implement password hashing', 'Add security headers'],
+              title: `Week 3: ${coreTopics[2]}`,
+              description: `Deep dive into ${coreTopics[2]}, a core skill required for every ${goal}.`,
+              learningGoals: [`Understand ${coreTopics[2]} architecture`, `Build real ${coreTopics[2]} features`, 'Integrate with previous skills'],
               dailyTasks: [
-                {
-                  dayNumber: 1,
-                  title: 'JWT tokens setup',
-                  description: 'Configure token generation and sign mechanisms.',
-                  codingPractice: 'Sign JWT access and refresh payloads.',
-                  links: [
-                    { title: 'JWT Authentication Guide (Hitesh Choudhary)', url: 'https://www.youtube.com/watch?v=dH7Zp71J_L4', type: 'youtube' }
-                  ]
-                },
-                {
-                  dayNumber: 2,
-                  title: 'Cookies security',
-                  description: 'Implement HttpOnly and Secure cookie flags.',
-                  codingPractice: 'Attach cookie tokens to response object with strict security settings.',
-                  links: [
-                    { title: 'MDN Secure Cookies Manual', url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies', type: 'docs' },
-                    { title: 'Web Security Cheatsheet Notes', url: 'https://developer.mozilla.org/en-US/docs/Web/Security/Cheatsheet', type: 'notes' }
-                  ]
-                },
-                {
-                  dayNumber: 3,
-                  title: 'CORS permissions',
-                  description: 'Allow secure origins dynamic validation checks.',
-                  codingPractice: 'Configure express cors middleware with dynamic origin resolver.',
-                  links: [
-                    { title: 'MDN CORS Configuration Manual', url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 4,
-                  title: 'Password encryption',
-                  description: 'Hash user passwords safely before database storage.',
-                  codingPractice: 'Use bcrypt to salt and hash incoming password updates.',
-                  links: [
-                    { title: 'Bcrypt Library Documentation', url: 'https://github.com/kelektiv/node.bcrypt.js#readme', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 5,
-                  title: 'Rate limit configs',
-                  description: 'Add request rate limit filters to protect auth routes.',
-                  codingPractice: 'Deploy express-rate-limit to lock route abuse.',
-                  links: [
-                    { title: 'Express Rate Limit Docs', url: 'https://github.com/express-rate-limit/express-rate-limit#readme', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 6,
-                  title: 'Auth flow testing',
-                  description: 'Verify end-to-end token sign-in and token refresh lifecycle.',
-                  codingPractice: 'Write unit assertion verifying expired access token returns 401.',
-                  links: [
-                    { title: 'Jest API Testing Guide video', url: 'https://www.youtube.com/watch?v=FKnzS_icp20', type: 'youtube' }
-                  ]
-                }
+                makeDay(1, `${coreTopics[2]} Architecture`, `Understand how ${coreTopics[2]} is structured and how it's used in production ${goal} systems.`, `Diagram the architecture of a system using ${coreTopics[2]}.`, [learningResources[0]]),
+                makeDay(2, `Building with ${coreTopics[2]}`, `Hands-on: implement ${coreTopics[2]} features step-by-step.`, `Build a feature that uses ${coreTopics[2]} from scratch.`, [learningResources[1]]),
+                makeDay(3, `${coreTopics[2]} Advanced Topics`, `Go deeper into advanced ${coreTopics[2]} topics that appear in real interviews and jobs.`, `Implement 1 advanced ${coreTopics[2]} pattern used in production.`, [learningResources[2]]),
+                makeDay(4, `Integration Project`, `Combine ${coreTopics[0]}, ${coreTopics[1]}, and ${coreTopics[2]} into an integrated mini-app.`, `Build a mini ${goal} project integrating all 3 topics covered so far.`, [learningResources[0]]),
+                makeDay(5, `Code Review & Refactoring`, `Review the code from this week and refactor it to be clean and production-ready.`, `Refactor your integration project following best practices.`, [learningResources[1]]),
+                makeDay(6, `Portfolio Documentation`, `Write a clear README for your project and document your learnings.`, `Write a professional README.md with setup steps, features, and screenshots.`, [learningResources[2]]),
               ],
-              projects: [
-                {
-                  title: 'Auth Identity Gate',
-                  description: 'Construct secure user login endpoints featuring email-OTP validation checks.',
-                  techStack: ['Express', 'JWT', 'Nodemailer'],
-                  difficulty: 'intermediate',
-                  estimatedHours: 8,
-                  folderStructure: 'src/\n  middlewares/\n    auth.ts\n  controllers/\n    auth.controller.ts',
-                  deploymentGuide: 'Set up SMTP credentials and test route logs.'
-                }
-              ]
+              projects: [{
+                title: `${goal} Integration Project`,
+                description: `A complete mini application that demonstrates ${coreTopics[0]}, ${coreTopics[1]}, and ${coreTopics[2]} working together.`,
+                techStack: techStack.slice(0, 4),
+                difficulty,
+                estimatedHours: 8,
+                folderStructure: `src/\n  components/\n  utils/\n  main.js`,
+                deploymentGuide: `Deploy on ${goalConfig.deployTarget}.`,
+              }],
             },
             {
               weekNumber: 4,
-              title: 'Module 4: API Assembly & Deployment',
-              description: 'Finalize server features and build deployment bundles.',
-              learningGoals: ['Assemble router paths', 'Prepare Docker configurations', 'Launch deployment packages'],
+              title: 'Week 4: Real-World Projects & Portfolio',
+              description: `Build your portfolio project: a complete, deployable ${goal} application.`,
+              learningGoals: ['Build a full end-to-end project', 'Learn deployment best practices', 'Create portfolio-ready work'],
               dailyTasks: [
-                {
-                  dayNumber: 1,
-                  title: 'Integrate routes',
-                  description: 'Hook up all modules to the primary express app entrypoint.',
-                  codingPractice: 'Mount routes as middleware sub-paths.',
-                  links: [
-                    { title: 'Clean Architecture Guide', url: 'https://softwareonroad.com/clean-architecture-node-js-express/', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 2,
-                  title: 'Build scripts configuration',
-                  description: 'Define compiler target rules and postbuild assets compiling scripts.',
-                  codingPractice: 'Update package.json and tsconfig.json build settings.',
-                  links: [
-                    { title: 'TSConfig Reference Manual', url: 'https://www.typescriptlang.org/docs/handbook/tsconfig-json.html', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 3,
-                  title: 'Docker containers config',
-                  description: 'Write multi-stage Docker build containers.',
-                  codingPractice: 'Create a local Dockerfile compiling node resources.',
-                  links: [
-                    { title: 'Dockerizing Node.js Guide', url: 'https://docs.docker.com/language/nodejs/containerize/', type: 'docs' },
-                    { title: 'Docker Engine Command Notes Guide', url: 'https://devhints.io/docker', type: 'notes' }
-                  ]
-                },
-                {
-                  dayNumber: 4,
-                  title: 'Deploying to Render',
-                  description: 'Configure public hosting environment parameters.',
-                  codingPractice: 'Commit production env files securely to render web console.',
-                  links: [
-                    { title: 'Render Hosting Guide Docs', url: 'https://render.com/docs/web-services', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 5,
-                  title: 'Load testing APIs',
-                  description: 'Benchmark request latency limits and database speed tests.',
-                  codingPractice: 'Simulate high load targets to test mongoose response times.',
-                  links: [
-                    { title: 'Artillery Benchmarking Docs', url: 'https://www.artillery.io/docs', type: 'docs' }
-                  ]
-                },
-                {
-                  dayNumber: 6,
-                  title: 'Monitoring logs setup',
-                  description: 'Integrate system logging tools to capture runtime failures.',
-                  codingPractice: 'Log runtime errors to database error collections.',
-                  links: [
-                    { title: 'Winston Logger Manual', url: 'https://github.com/winstonjs/winston#readme', type: 'docs' },
-                    { title: 'Docker Containerization in Hindi (CodeWithHarry)', url: 'https://www.youtube.com/watch?v=3c-iQqcrNyw', type: 'youtube' }
-                  ]
-                }
+                makeDay(1, 'Project Planning', `Plan your capstone ${goal} project: define features, user stories, and tech stack.`, `Write a project specification document with 5 user stories.`, [learningResources[0]]),
+                makeDay(2, 'Project Setup & Architecture', `Set up your project repository, structure, and CI/CD pipeline.`, `Initialize the repo, configure linting, and set up folder structure.`, [learningResources[1]]),
+                makeDay(3, 'Core Features Implementation', `Build the primary features of your ${goal} capstone project.`, `Implement 2 core features with tests.`, [learningResources[0], learningResources[2]]),
+                makeDay(4, 'UI/UX & Styling', `Polish the user interface and ensure a professional look.`, `Implement responsive design and smooth UI interactions.`, [learningResources[1]]),
+                makeDay(5, 'Deployment & Testing', `Deploy your project live and run end-to-end tests.`, `Deploy to ${goalConfig.deployTarget} and test all features.`, [learningResources[2]]),
+                makeDay(6, 'Portfolio & LinkedIn Update', `Update your portfolio site and LinkedIn with your new project.`, `Write a project case study for your portfolio with screenshots and live link.`, [learningResources[0]]),
               ],
-              projects: [
-                {
-                  title: 'Production Bundle Launch',
-                  description: 'Synthesize the completed application and deploy live on cloud services.',
-                  techStack: ['Node.js', 'Docker', 'Vercel', 'Render'],
-                  difficulty: 'advanced',
-                  estimatedHours: 10,
-                  folderStructure: 'docker-compose.yml\nDockerfile\nsrc/\n  app.ts',
-                  deploymentGuide: 'Run docker-compose up --build to launch container local cluster.'
-                }
-              ]
-            }
-          ]
-        }
-      ]
+              projects: [{
+                title: `${goal} Capstone Project`,
+                description: `A full, portfolio-ready project demonstrating your ${goal} skills using: ${techStack.join(', ')}.`,
+                techStack,
+                difficulty: 'intermediate',
+                estimatedHours: 12,
+                folderStructure: `src/\n  pages/\n  components/\n  api/\n  utils/\nREADME.md`,
+                deploymentGuide: `Deploy on ${goalConfig.deployTarget} with CI/CD pipeline.`,
+              }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  /**
+   * Returns goal-specific configuration for mock roadmap generation
+   */
+  private static getGoalConfig(goal: string): {
+    month1Title: string;
+    coreTopics: string[];
+    techStack: string[];
+    resources: { title: string; url: string; type: string }[];
+    week1Project: { title: string; description: string; practice: string; folderStructure: string };
+    deployTarget: string;
+  } {
+    const goalLower = goal.toLowerCase();
+
+    if (goalLower.includes('frontend') || goalLower.includes('front-end') || goalLower.includes('react') || goalLower.includes('ui')) {
+      return {
+        month1Title: 'HTML, CSS & JavaScript Fundamentals',
+        coreTopics: ['HTML & CSS', 'JavaScript', 'React.js', 'Responsive Design', 'REST APIs', 'Git & Deployment'],
+        techStack: ['HTML', 'CSS', 'JavaScript', 'React', 'Vite', 'Vercel'],
+        resources: [
+          { title: 'The Odin Project - Full Frontend Path', url: 'https://www.theodinproject.com/paths/full-stack-javascript', type: 'course' },
+          { title: 'MDN Web Docs - HTML Reference', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML', type: 'docs' },
+          { title: 'React Official Docs (react.dev)', url: 'https://react.dev/learn', type: 'docs' },
+        ],
+        week1Project: {
+          title: 'Personal Portfolio Website',
+          description: 'Build a responsive personal portfolio website with HTML, CSS and JavaScript.',
+          practice: 'Create a responsive landing page with navigation, hero section, and contact form.',
+          folderStructure: 'index.html\nstyles.css\nscript.js\nassets/',
+        },
+        deployTarget: 'Vercel or Netlify',
+      };
+    }
+
+    if (goalLower.includes('backend') || goalLower.includes('back-end') || goalLower.includes('server') || goalLower.includes('api')) {
+      return {
+        month1Title: 'Node.js, Express & REST API Fundamentals',
+        coreTopics: ['Node.js', 'Express.js', 'MongoDB & Mongoose', 'REST API Design', 'Authentication & JWT', 'Docker & Deployment'],
+        techStack: ['Node.js', 'TypeScript', 'Express', 'MongoDB', 'JWT', 'Docker'],
+        resources: [
+          { title: 'Node.js Official Documentation', url: 'https://nodejs.org/en/docs', type: 'docs' },
+          { title: 'Express.js Guide', url: 'https://expressjs.com/en/guide/routing.html', type: 'docs' },
+          { title: 'Backend Development in Hindi (Chai aur Code)', url: 'https://www.youtube.com/playlist?list=PLu71SKxNbfoBGh_8p_NS-ZAh6463yYtVP', type: 'youtube' },
+        ],
+        week1Project: {
+          title: 'REST API Starter',
+          description: 'Build a CRUD REST API with Express and MongoDB for a simple resource like todos or notes.',
+          practice: 'Create GET, POST, PUT, DELETE routes for a Notes resource.',
+          folderStructure: 'src/\n  routes/\n  controllers/\n  models/\n  app.ts',
+        },
+        deployTarget: 'Render or Railway',
+      };
+    }
+
+    if (goalLower.includes('full stack') || goalLower.includes('fullstack')) {
+      return {
+        month1Title: 'Full Stack Foundations: Frontend + Backend',
+        coreTopics: ['HTML/CSS/JavaScript', 'React.js', 'Node.js & Express', 'MongoDB', 'Authentication', 'DevOps & Deployment'],
+        techStack: ['React', 'Node.js', 'Express', 'MongoDB', 'TypeScript', 'Docker', 'Vercel'],
+        resources: [
+          { title: 'Full Stack Open Course (Univ of Helsinki)', url: 'https://fullstackopen.com/en/', type: 'course' },
+          { title: 'MERN Stack Tutorial (Traversy Media)', url: 'https://www.youtube.com/watch?v=mrHNSanmqQ4', type: 'youtube' },
+          { title: 'React Official Docs', url: 'https://react.dev/learn', type: 'docs' },
+        ],
+        week1Project: {
+          title: 'Full Stack Todo App',
+          description: 'Build a complete Todo application with React frontend and Node.js/Express backend.',
+          practice: 'Connect a React frontend to an Express REST API and persist todos in MongoDB.',
+          folderStructure: 'frontend/\n  src/\n    App.jsx\nbackend/\n  src/\n    app.ts',
+        },
+        deployTarget: 'Vercel (frontend) + Render (backend)',
+      };
+    }
+
+    if (goalLower.includes('ai') || goalLower.includes('machine learning') || goalLower.includes('ml') || goalLower.includes('data science')) {
+      return {
+        month1Title: 'Python, Math & ML Fundamentals',
+        coreTopics: ['Python Programming', 'Linear Algebra & Statistics', 'Machine Learning with scikit-learn', 'Deep Learning & PyTorch', 'NLP & LLMs', 'MLOps & Deployment'],
+        techStack: ['Python', 'NumPy', 'Pandas', 'scikit-learn', 'PyTorch', 'HuggingFace', 'FastAPI'],
+        resources: [
+          { title: 'fast.ai - Practical Deep Learning', url: 'https://course.fast.ai/', type: 'course' },
+          { title: 'Kaggle Learn - ML Free Courses', url: 'https://www.kaggle.com/learn', type: 'course' },
+          { title: 'Python ML Tutorial Hindi (Krish Naik)', url: 'https://www.youtube.com/c/KrishNaik', type: 'youtube' },
+        ],
+        week1Project: {
+          title: 'Data Analysis Notebook',
+          description: 'Analyze a real-world dataset using Python, Pandas and Matplotlib.',
+          practice: 'Load a CSV dataset, clean it, and generate 3 visualizations using Matplotlib.',
+          folderStructure: 'notebooks/\n  analysis.ipynb\ndata/\n  dataset.csv',
+        },
+        deployTarget: 'Hugging Face Spaces or Streamlit Cloud',
+      };
+    }
+
+    if (goalLower.includes('devops') || goalLower.includes('cloud') || goalLower.includes('sre')) {
+      return {
+        month1Title: 'Linux, Networking & Cloud Fundamentals',
+        coreTopics: ['Linux & Bash', 'Docker & Containers', 'Kubernetes', 'CI/CD Pipelines', 'AWS/GCP/Azure', 'Infrastructure as Code'],
+        techStack: ['Linux', 'Docker', 'Kubernetes', 'GitHub Actions', 'Terraform', 'AWS'],
+        resources: [
+          { title: 'Docker Official Get Started Guide', url: 'https://docs.docker.com/get-started/', type: 'docs' },
+          { title: 'Kubernetes Docs - Getting Started', url: 'https://kubernetes.io/docs/setup/', type: 'docs' },
+          { title: 'DevOps Full Course Hindi (TechWorld with Nana)', url: 'https://www.youtube.com/c/TechWorldwithNana', type: 'youtube' },
+        ],
+        week1Project: {
+          title: 'Dockerized App',
+          description: 'Containerize an existing Node.js app using Docker and docker-compose.',
+          practice: 'Write a Dockerfile and docker-compose.yml and run the app in a container.',
+          folderStructure: 'Dockerfile\ndocker-compose.yml\nsrc/\n  app.js',
+        },
+        deployTarget: 'AWS EC2 or DigitalOcean Droplet',
+      };
+    }
+
+    if (goalLower.includes('cyber') || goalLower.includes('security') || goalLower.includes('ethical hacking')) {
+      return {
+        month1Title: 'Networking, Linux & Security Fundamentals',
+        coreTopics: ['Networking & TCP/IP', 'Linux & Bash Scripting', 'Web Application Security (OWASP)', 'Penetration Testing', 'Cryptography', 'Security Tools & CTFs'],
+        techStack: ['Linux', 'Kali Linux', 'Python', 'Nmap', 'Metasploit', 'Burp Suite'],
+        resources: [
+          { title: 'TryHackMe - Cybersecurity Learning', url: 'https://tryhackme.com/', type: 'course' },
+          { title: 'OWASP Top 10 Documentation', url: 'https://owasp.org/www-project-top-ten/', type: 'docs' },
+          { title: 'Ethical Hacking in Hindi (Apna College)', url: 'https://www.youtube.com/c/ApnaCollegeOfficial', type: 'youtube' },
+        ],
+        week1Project: {
+          title: 'Network Scanner Tool',
+          description: 'Build a simple port scanner tool using Python and socket programming.',
+          practice: 'Write a Python script that scans open ports on a target IP address.',
+          folderStructure: 'scanner.py\nutils/\n  port_utils.py',
+        },
+        deployTarget: 'Local VM / TryHackMe Labs',
+      };
+    }
+
+    // Default / Generic tech roadmap
+    return {
+      month1Title: `${goal} Foundations`,
+      coreTopics: [`${goal} Fundamentals`, 'Programming & Logic', 'System Design', 'Tools & Workflows', 'Testing & QA', 'Deployment & Portfolio'],
+      techStack: ['JavaScript', 'TypeScript', 'Node.js', 'Git', 'Docker', 'Cloud'],
+      resources: [
+        { title: 'freeCodeCamp - Full Stack Development', url: 'https://www.freecodecamp.org/learn', type: 'course' },
+        { title: 'MDN Web Docs', url: 'https://developer.mozilla.org/', type: 'docs' },
+        { title: 'Tech Career Roadmap Hindi (CodeWithHarry)', url: 'https://www.youtube.com/c/CodeWithHarry', type: 'youtube' },
+      ],
+      week1Project: {
+        title: `${goal} Starter Project`,
+        description: `A beginner project demonstrating core ${goal} concepts.`,
+        practice: 'Build a working prototype with the core features of your target role.',
+        folderStructure: 'src/\n  index.js\nREADME.md',
+      },
+      deployTarget: 'Vercel or GitHub Pages',
     };
   }
 
