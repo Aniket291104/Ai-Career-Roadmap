@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { useUserStore } from '@/store/user-store';
 
 const generateRoadmapSchema = z.object({
-  skills: z.string().min(2, 'Please list at least a couple of your current skills'),
+  skills: z.string().min(2, 'Please list at least one skill (e.g. JavaScript, HTML)'),
   goal: z.string().min(2, 'Please select or describe your target career goal'),
   dailyStudyHours: z.number().min(1).max(24),
   learningStyle: z.enum(['visual', 'practical', 'theoretical', 'mixed']),
@@ -88,11 +88,17 @@ export default function RoadmapsPage() {
 
   const onSubmit = async (data: GenerateInput) => {
     setGenerating(true);
-    // Parse skills text into string array
+    // Split comma-separated skills string into array, trim whitespace, filter empty
     const skillsArray = data.skills
       .split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (skillsArray.length === 0) {
+      toast.error('Please enter at least one skill.');
+      setGenerating(false);
+      return;
+    }
 
     try {
       const res = await api.post('/roadmaps/generate', {
