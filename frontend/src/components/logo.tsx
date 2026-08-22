@@ -75,7 +75,7 @@ export function BrandLogo({ className, iconClassName, textClassName }: LogoProps
       <Logo className="w-9 h-9" iconClassName={iconClassName} />
       <div className="flex flex-col">
         <span className={`font-extrabold text-base tracking-tight leading-none bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent ${textClassName || ''}`}>
-          Roadmap<span className="text-primary font-black">.AI</span>
+          Roadmap<span className="text-primary font-black">AI</span>
         </span>
         <span className="text-[9px] font-extrabold tracking-[0.16em] text-muted-foreground/75 uppercase mt-0.5 leading-none">
           Career Architect

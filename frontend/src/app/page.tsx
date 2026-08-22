@@ -6,7 +6,7 @@ import { BrandLogo } from '@/components/logo';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useTheme as useNextTheme } from 'next-themes';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, Variants } from 'framer-motion';
 import { 
   Compass, 
   Map, 
@@ -26,6 +26,15 @@ import {
   ChevronDown,
   Loader2 
 } from 'lucide-react';
+
+const fadinUpVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+  }
+};
 
 export default function LandingPage() {
   const { theme, setTheme } = useNextTheme();
@@ -52,6 +61,8 @@ export default function LandingPage() {
     target: mockupRef,
     offset: ["start end", "center center"]
   });
+
+  const { scrollYProgress: windowScrollYProgress } = useScroll();
 
   const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
   const opacity = useTransform(scrollYProgress, [0, 1], [0.7, 1]);
@@ -349,6 +360,12 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen font-sans bg-background text-foreground transition-colors duration-300 relative bg-grid-mesh">
       
+      {/* Scroll Progress Bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-primary to-secondary z-50 origin-left"
+        style={{ scaleX: windowScrollYProgress }}
+      />
+      
       {/* Aurora Ambient Lighting (Aesthetic background glow) */}
       <div className="absolute top-[-100px] left-1/4 w-[600px] h-[600px] bg-primary/4 rounded-full blur-[160px] pointer-events-none animate-pulse-slow" />
       <div className="absolute top-[40%] right-1/4 w-[700px] h-[700px] bg-secondary/3 rounded-full blur-[180px] pointer-events-none" />
@@ -548,7 +565,13 @@ export default function LandingPage() {
 
       {/* PROCESS TIMELINE SECTION (Trail Map Concept) */}
       <section id="process" className="py-24 border-t border-border overflow-visible">
-        <div className="max-w-7xl mx-auto px-6 mb-16 text-center">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadinUpVariants}
+          className="max-w-7xl mx-auto px-6 mb-16 text-center"
+        >
           <span className="font-mono text-xs uppercase tracking-widest text-primary">Map Timeline</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             The Interactive Career Trail
@@ -556,7 +579,7 @@ export default function LandingPage() {
           <p className="mt-4 max-w-2xl mx-auto text-muted-foreground text-xs md:text-sm leading-relaxed">
             Follow the winding trail map to see how the system coordinates profile feedback, real-time exercises, mock evaluations, and job-ready status. Watch the glowing marker travel the route.
           </p>
-        </div>
+        </motion.div>
 
         {/* Outer container of the responsive timeline path */}
         <div 
@@ -611,8 +634,12 @@ export default function LandingPage() {
           {/* Milestone Cards list */}
           <div className="relative z-10 flex flex-col gap-12 md:gap-24 pl-8 md:pl-0">
             {processSteps.map((step, idx) => (
-              <div 
+              <motion.div 
                 key={idx}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-100px" }}
+                variants={fadinUpVariants}
                 className={`w-full md:w-[45%] flex flex-col relative group milestone-card-container ${
                   idx % 2 === 0 ? 'md:mr-auto' : 'md:ml-auto'
                 }`}
@@ -646,7 +673,7 @@ export default function LandingPage() {
                     {step.desc}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -654,7 +681,13 @@ export default function LandingPage() {
 
       {/* FEATURES GRID SECTION */}
       <section id="features" className="py-24 max-w-7xl mx-auto px-6 border-t border-border">
-        <div className="text-center mb-20">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadinUpVariants}
+          className="text-center mb-20"
+        >
           <span className="font-mono text-xs uppercase tracking-widest text-primary">System Architecture</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             Platform Capabilities
@@ -662,15 +695,19 @@ export default function LandingPage() {
           <p className="mt-4 text-muted-foreground text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
             Everything you need to successfully transition careers or master new technical domains in one secure runtime environment.
           </p>
-        </div>
+        </motion.div>
 
         {/* 6 cards, 3 columns with hairline dividers */}
         <div className="grid grid-cols-1 md:grid-cols-3 border-l border-t border-border">
           {features.map((feat, idx) => {
             const Icon = feat.icon;
             return (
-              <div
+              <motion.div
                 key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] as const }}
                 className="p-8 border-r border-b border-border bg-card/30 flex flex-col justify-between hover:bg-card/65 transition-all duration-300 group"
               >
                 <div>
@@ -680,7 +717,7 @@ export default function LandingPage() {
                   <h3 className="font-display font-bold text-sm text-foreground mb-3">{feat.title}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed font-sans">{feat.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -688,7 +725,13 @@ export default function LandingPage() {
 
       {/* CURATED TRACKS SECTION */}
       <section id="categories" className="py-24 max-w-7xl mx-auto px-6 border-t border-border">
-        <div className="text-center mb-20">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadinUpVariants}
+          className="text-center mb-20"
+        >
           <span className="font-mono text-xs uppercase tracking-widest text-primary">Pre-configured Paths</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             Explore Curated Careers
@@ -696,13 +739,20 @@ export default function LandingPage() {
           <p className="mt-4 text-muted-foreground text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
             Generate customized, weekly roadmap tracks across high-demand engineering categories.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {categories.map((cat, idx) => {
             const Icon = cat.icon;
             return (
-              <div key={idx} className="p-8 rounded border border-border bg-card/25 hover:bg-card/75 hover:border-primary/30 transition-all duration-300 flex flex-col justify-between min-h-[220px] group">
+              <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] as const }}
+                className="p-8 rounded border border-border bg-card/25 hover:bg-card/75 hover:border-primary/30 transition-all duration-300 flex flex-col justify-between min-h-[220px] group"
+              >
                 <div>
                   <div className="w-10 h-10 rounded border border-border bg-muted/40 flex items-center justify-center text-secondary mb-6 group-hover:border-secondary/40 transition-colors">
                     <Icon className="w-4.5 h-4.5" />
@@ -710,7 +760,7 @@ export default function LandingPage() {
                   <h3 className="font-display font-bold text-sm text-foreground mb-3">{cat.title}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed font-sans">{cat.desc}</p>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -718,7 +768,13 @@ export default function LandingPage() {
 
       {/* PRICING SECTION */}
       <section id="pricing" className="py-24 max-w-7xl mx-auto px-6 border-t border-border">
-        <div className="text-center mb-20">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadinUpVariants}
+          className="text-center mb-20"
+        >
           <span className="font-mono text-xs uppercase tracking-widest text-primary">Scaling Licenses</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             Transparent Scaling Plans
@@ -726,11 +782,17 @@ export default function LandingPage() {
           <p className="mt-4 text-muted-foreground text-xs md:text-sm max-w-2xl mx-auto">
             Choose the membership that matches your speed of professional timeline execution.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Tier */}
-          <div className="p-8 rounded border border-border bg-card/45 flex flex-col justify-between relative overflow-hidden">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
+            className="p-8 rounded border border-border bg-card/45 flex flex-col justify-between relative overflow-hidden"
+          >
             <div>
               <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Standard</span>
               <h3 className="text-xl font-display font-bold mt-2 text-foreground">Free Plan</h3>
@@ -765,10 +827,16 @@ export default function LandingPage() {
             >
               Get Started Free
             </Link>
-          </div>
+          </motion.div>
 
           {/* Premium Tier */}
-          <div className="p-8 rounded border border-primary bg-card/65 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-primary/5">
+          <motion.div 
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
+            className="p-8 rounded border border-primary bg-card/65 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-primary/5"
+          >
             {/* Pop badge */}
             <div className="absolute top-0 right-0 px-4 py-1.5 bg-primary text-background text-[9px] font-mono uppercase tracking-widest font-extrabold rounded-bl">
               Popular
@@ -808,23 +876,33 @@ export default function LandingPage() {
             >
               Upgrade Now
             </Link>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* FAQ SECTION */}
       <section id="faq" className="py-24 max-w-4xl mx-auto px-6 border-t border-border">
-        <div className="text-center mb-20">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadinUpVariants}
+          className="text-center mb-20"
+        >
           <span className="font-mono text-xs uppercase tracking-widest text-primary">Documentation</span>
           <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             Frequently Asked Questions
           </h2>
-        </div>
+        </motion.div>
 
         <div className="space-y-4">
           {faqList.map((faq, idx) => (
-            <div 
+            <motion.div 
               key={idx} 
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.5, delay: idx * 0.05 }}
               className="border border-border rounded bg-card/20 overflow-hidden"
             >
               <button
@@ -849,14 +927,20 @@ export default function LandingPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
       {/* CONTACT/NEWSLETTER SECTION */}
       <section className="py-24 max-w-3xl mx-auto px-6 border-t border-border text-center">
-        <div className="p-8 md:p-12 rounded border border-border bg-card/35 backdrop-blur-md">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] as const }}
+          className="p-8 md:p-12 rounded border border-border bg-card/35 backdrop-blur-md"
+        >
           <Mail className="w-8 h-8 text-primary mx-auto mb-6" />
           <h2 className="text-2xl md:text-4xl font-display font-bold tracking-tight mb-4 text-foreground">
             Stay in the loop
@@ -881,7 +965,7 @@ export default function LandingPage() {
               {subscribingNewsletter ? 'Subscribing...' : 'Subscribe'}
             </button>
           </form>
-        </div>
+        </motion.div>
       </section>
 
       {/* FOOTER */}
