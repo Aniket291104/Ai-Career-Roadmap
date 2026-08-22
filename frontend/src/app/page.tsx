@@ -437,11 +437,6 @@ export default function LandingPage() {
           transition={{ duration: 0.6 }}
           className="flex flex-col items-center"
         >
-          <div className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card text-[10px] font-mono uppercase tracking-widest text-primary">
-            <Sparkles className="w-3 h-3" />
-            <span>AI Career Training Pipeline v1.2</span>
-          </div>
-
           <h1 className="max-w-5xl font-display font-bold text-4xl md:text-6xl lg:text-7xl leading-tight tracking-tight text-foreground">
             Tech Careers are not born.<br />
             They are <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">trained.</span>
