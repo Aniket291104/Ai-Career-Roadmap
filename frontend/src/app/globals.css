@@ -1,183 +1,176 @@
 @import "tailwindcss";
 
 :root {
-  /* Default Theme (Dark Mode by Default for Premium Tech Feel) - Replicating Ethara.AI colors */
-  --background: 240 10% 2%;
-  --foreground: 0 0% 100%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 2%;
-  --popover-foreground: 0 0% 100%;
-  --primary: 263.4 90% 60%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 3.7% 9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 9%;
-  --muted-foreground: 240 5% 60%;
-  --accent: 263.4 90% 70%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 12%; /* Very thin border (zinc-850/900 style) */
-  --input: 240 3.7% 12%;
-  --ring: 263.4 90% 60%;
+  /* Dark Trail Map Experience Colors */
+  --background: #090d10;
+  --foreground: #eae6da;
+  --card: #10161b;
+  --card-foreground: #eae6da;
+  --popover: #090d10;
+  --popover-foreground: #eae6da;
+  --primary: #ffb454;
+  --primary-foreground: #090d10;
+  --secondary: #3fe0c9;
+  --secondary-foreground: #090d10;
+  --muted: #10161b;
+  --muted-foreground: #9aa5a8;
+  --accent: #ffb454;
+  --accent-foreground: #090d10;
+  --destructive: #ef4444;
+  --destructive-foreground: #eae6da;
+  --border: #162028;
+  --input: #162028;
+  --ring: #ffb454;
   --radius: 0.5rem;
+
+  --font-space-grotesk: var(--font-space-grotesk), sans-serif;
+  --font-inter: var(--font-inter), sans-serif;
+  --font-ibm-plex-mono: var(--font-ibm-plex-mono), monospace;
 }
 
+/* Force dark theme default colors */
 .light,
 .light-theme,
 [data-theme='light'] {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 98%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 263.4 90% 50%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 263.4 90% 60%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 263.4 90% 50%;
+  --background: #eae6da;
+  --foreground: #090d10;
+  --card: #eae6da;
+  --card-foreground: #090d10;
+  --primary: #ffb454;
+  --primary-foreground: #090d10;
+  --secondary: #3fe0c9;
+  --secondary-foreground: #090d10;
+  --muted: #eae6da;
+  --muted-foreground: #9aa5a8;
+  --border: #eae6da;
 }
 
 @theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
   
-  --font-display: var(--font-dm-sans), sans-serif;
-  --font-sans: var(--font-roboto), sans-serif;
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
 }
 
 /* Glassmorphism Styles */
 .glass-panel {
-  background: rgba(24, 24, 27, 0.55);
+  background: rgba(16, 22, 27, 0.7);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.light .glass-panel,
-.light-theme .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.light .glass-card,
-.light-theme .glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-}
-
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 40px 0 rgba(263, 90, 240, 0.1);
+  border-color: rgba(255, 180, 84, 0.3);
+  box-shadow: 0 12px 40px 0 rgba(255, 180, 84, 0.08);
   transform: translateY(-2px);
 }
 
-/* Aurora background grids */
-.bg-grid-mesh {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+/* Trail Map Milestone Card styles driven by requestAnimationFrame intensity variables */
+.milestone-card {
+  --active-intensity: 0;
+  transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), 
+              border-color 0.25s ease-out, 
+              box-shadow 0.25s ease-out,
+              background-color 0.25s ease-out;
+  transform: translateY(calc(var(--active-intensity) * -6px));
+  border-color: color-mix(in srgb, var(--border), var(--primary) calc(var(--active-intensity) * 100%));
+  background-color: color-mix(in srgb, var(--card), var(--primary) calc(var(--active-intensity) * 6%));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 
+              0 0 25px rgba(255, 180, 84, calc(var(--active-intensity) * 0.12));
 }
 
-.light .bg-grid-mesh,
-.light-theme .bg-grid-mesh {
+.milestone-step-num {
+  color: color-mix(in srgb, var(--muted-foreground), var(--primary) calc(var(--active-intensity) * 100%));
+  text-shadow: 0 0 10px rgba(255, 180, 84, calc(var(--active-intensity) * 0.4));
+}
+
+.milestone-card-title {
+  color: color-mix(in srgb, var(--foreground), #ffffff calc(var(--active-intensity) * 100%));
+}
+
+/* Background Grid Mesh (Technical look) */
+.bg-grid-mesh {
+  background-size: 50px 50px;
   background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
 }
 
 /* Animations */
 @keyframes pulse-slow {
   0%, 100% {
-    opacity: 0.5;
+    opacity: 0.4;
     transform: scale(1);
   }
   50% {
-    opacity: 0.8;
-    transform: scale(1.08);
+    opacity: 0.6;
+    transform: scale(1.05);
   }
 }
 
 .animate-pulse-slow {
-  animation: pulse-slow 8s infinite ease-in-out;
+  animation: pulse-slow 10s infinite ease-in-out;
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars matching the brand theme */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border);
   border-radius: 9999px;
+  border: 2px solid var(--background);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--primary);
 }
 
-/* Style Select Dropdown Options for Better Contrast */
+/* Dropdown styling */
 select option {
-  background-color: #0c0c0e;
-  color: #ffffff;
-}
-
-.light select option,
-.light-theme select option,
-[data-theme='light'] select option {
-  background-color: #ffffff;
-  color: #0f0f11;
+  background-color: var(--background);
+  color: var(--foreground);
 }
