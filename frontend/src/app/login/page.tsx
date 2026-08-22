@@ -70,7 +70,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
             <Logo className="w-9 h-9" />
-            <span className="font-extrabold text-lg">Roadmap.AI</span>
+            <span className="font-extrabold text-lg">RoadmapAI</span>
           </Link>
           <h2 className="text-2xl font-bold tracking-tight">Welcome Back</h2>
           <p className="text-xs text-muted-foreground mt-1.5">Enter credentials to access your roadmap space</p>

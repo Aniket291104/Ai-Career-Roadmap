@@ -894,7 +894,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <BrandLogo />
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-            &copy; 2026 Roadmap.AI Inc. Built with Space Grotesk, Inter, and IBM Plex Mono.
+            &copy; 2026 RoadmapAI Inc. Built with Space Grotesk, Inter, and IBM Plex Mono.
           </p>
           <div className="flex gap-6 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
             <button onClick={() => setPrivacyModalOpen(true)} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0">Privacy</button>
@@ -933,7 +933,7 @@ export default function LandingPage() {
               </p>
               <div className="space-y-4 text-xs text-muted-foreground leading-relaxed font-sans">
                 <p>
-                  At <strong>Roadmap.AI</strong>, we are committed to safeguarding your private data. This document outlines how we collect, store, and process your profile credentials.
+                  At <strong>RoadmapAI</strong>, we are committed to safeguarding your private data. This document outlines how we collect, store, and process your profile credentials.
                 </p>
                 <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">1. Data Collection</h4>
                 <p>
@@ -979,7 +979,7 @@ export default function LandingPage() {
               </p>
               <div className="space-y-4 text-xs text-muted-foreground leading-relaxed font-sans">
                 <p>
-                  By accessing <strong>Roadmap.AI</strong>, you agree to comply with our acceptable terms.
+                  By accessing <strong>RoadmapAI</strong>, you agree to comply with our acceptable terms.
                 </p>
                 <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">1. Account Provisioning</h4>
                 <p>
