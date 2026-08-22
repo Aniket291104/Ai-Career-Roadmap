@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/logo';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { useTheme as useNextTheme } from 'next-themes';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { 
   Compass, 
   Map, 
@@ -16,14 +16,12 @@ import {
   Cpu, 
   Layout, 
   Flame, 
-  LineChart, 
   ArrowRight, 
   Menu, 
   X, 
   Sun, 
   Moon, 
   Mail, 
-  BookOpen, 
   Terminal, 
   ChevronDown,
   Loader2 
@@ -43,6 +41,22 @@ export default function LandingPage() {
 
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [submittingContact, setSubmittingContact] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dotsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const activePathRef = useRef<SVGPathElement | null>(null);
+  const roverRef = useRef<SVGGElement | null>(null);
+  const mockupRef = useRef<HTMLDivElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: mockupRef,
+    offset: ["start end", "center center"]
+  });
+
+  const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 1], [0.7, 1]);
+  const y = useTransform(scrollYProgress, [0, 1], [50, 0]);
+
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +96,48 @@ export default function LandingPage() {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
+  const processSteps = [
+    {
+      num: '01',
+      title: 'Profile Analysis',
+      desc: 'Define your starting tech stack, career target, and daily hours to establish a customized baseline.',
+    },
+    {
+      num: '02',
+      title: 'Synthesize Roadmap',
+      desc: 'Generate custom monthly milestones, weekly goals, and daily tasks for active learning.',
+    },
+    {
+      num: '03',
+      title: 'Skill Assessments',
+      desc: 'Evaluate your understanding with dynamic coding sandboxes and conceptual quizzes.',
+    },
+    {
+      num: '04',
+      title: 'Resume Diagnostic',
+      desc: 'Scan formatting and key terms against targeted roles to maximize your ATS pass rate.',
+    },
+    {
+      num: '05',
+      title: 'Mock Interviews',
+      desc: 'Simulate full technical or behavioral interview loops with dedicated AI agents.',
+    },
+    {
+      num: '06',
+      title: 'Job Ready',
+      desc: 'Unlock verification credentials and showcase your roadmap execution to partner companies.',
+    }
+  ];
+
+  const features = [
+    { title: 'AI Roadmap Generator', desc: 'Generate multi-month structures with weekly milestones, daily subtasks, coding practices, and curated resources.', icon: Map },
+    { title: 'Interactive Assessments', desc: 'Evaluate your technical skills using dynamic programming MCQs and logical quizzes to isolate weaker areas.', icon: Sparkles },
+    { title: 'ATS Resume Review', desc: 'Scan and review resume keywords against specific job targets, returning ATS scores and format improvements.', icon: UserCheck },
+    { title: 'Mock Technical Interviews', desc: 'Simulate technical or behavioral interview loops with structured question trees and performance ratings.', icon: Cpu },
+    { title: 'XP & Streak Tracker', desc: 'Maintain learning consistency with daily streaks, activity heatmaps, and experience points rewards.', icon: Flame },
+    { title: 'Integrated Sandbox', desc: 'Write and compile solutions directly within a secure, browser-isolated coding execution runtime.', icon: Layout }
+  ];
+
   const categories = [
     { title: 'AI & Machine Learning', icon: Cpu, desc: 'Generative AI, Deep Learning architectures, model optimization, PyTorch, HuggingFace.' },
     { title: 'Full Stack Development', icon: Layout, desc: 'Next.js, React 19, TypeScript, Express, Mongoose, PostgreSQL, state machines.' },
@@ -91,72 +147,223 @@ export default function LandingPage() {
     { title: 'UI/UX & Product Design', icon: Compass, desc: 'Apple design system guidelines, glassmorphic interfaces, Figma flows, interactions.' },
   ];
 
-  const features = [
-    { title: 'AI Roadmap Generator', desc: 'Generate multi-month structures with weekly milestones, daily subtasks, coding practices, and curated YouTube/documentation materials.', icon: Map },
-    { title: 'Interactive Assessments', desc: 'Evaluate your technical skills using dynamic programming MCQs and logical quizzes to isolate weaker areas.', icon: Sparkles },
-    { title: 'ATS Resume Review', desc: 'Scan and review resume keywords against specific job targets, returning ATS scores and format improvements.', icon: UserCheck },
-    { title: 'Mock Technical Interviews', desc: 'Simulate technical or behavioral interview loops with structured question trees and performance ratings.', icon: UserCheck },
-  ];
-
   const faqList = [
-    { q: 'How does the AI Roadmap Generator create recommendations?', a: 'Our system analyzes your starting tech stack, career targets, learning style, and daily hours. It uses the Gemini 2.5 engine to synthesize a logical, step-by-step learning progression, complete with curated references and coding assignments.' },
-    { q: 'Can I track my progress and maintain streaks?', a: 'Yes! Every time you mark a daily roadmap task completed, you gain 15 XP points, update your activity calendar heatmap, and increment your active learning streak count.' },
+    { q: 'How does the AI Roadmap Generator create recommendations?', a: 'Our system analyzes your starting tech stack, career targets, learning style, and daily hours. It uses generative models to synthesize a logical, step-by-step learning progression, complete with curated references and coding assignments.' },
+    { q: 'Can I track my progress and maintain streaks?', a: 'Yes! Every time you mark a daily roadmap task completed, you gain XP points, update your activity calendar heatmap, and increment your active learning streak count.' },
     { q: 'Is there a limit to how many roadmaps I can generate?', a: 'Free accounts can generate up to 2 active roadmaps. Premium subscribers get unlimited roadmap generations, custom resume analyses, and access to all mock interview sessions.' },
     { q: 'Can I export my data or get a certificate?', a: 'Upon completing 100% of a generated roadmap, you unlock a verification certificate featuring a unique credential ID suitable for LinkedIn and CV sharing.' }
   ];
 
-  const [activeStep, setActiveStep] = useState(0);
+  useEffect(() => {
+    const container = containerRef.current;
+    const activePath = activePathRef.current;
+    const rover = roverRef.current;
+    
+    if (!container || !activePath) return;
 
-  const processSteps = [
-    {
-      num: '01',
-      title: 'Profile Analysis',
-      desc: 'Define your starting tech stack, career target, and daily hours.',
-      details: 'Our systems analyze real-time market requirements, framework dependencies, and job descriptions to establish a highly customized baseline for your journey.'
-    },
-    {
-      num: '02',
-      title: 'Synthesize Roadmap',
-      desc: 'Generate custom monthly milestones, weekly goals, and daily tasks.',
-      details: 'Get direct access to curated video links, reference documentations, and hands-on coding exercises structured for active learning and retention.'
-    },
-    {
-      num: '03',
-      title: 'Skill Assessments',
-      desc: 'Test your understanding with dynamic coding sandboxes and quizzes.',
-      details: 'Isolate weaker topics and get direct feedback. Coding challenges and conceptual MCQs dynamically adapt as your XP score increases.'
-    },
-    {
-      num: '04',
-      title: 'Resume Diagnostic',
-      desc: 'Review formatting and scan keywords against targeted roles.',
-      details: 'Increase your ATS score by discovering missing frameworks, standard keywords, and structural profile gaps to stand out to automated systems.'
-    },
-    {
-      num: '05',
-      title: 'Mock Interviews',
-      desc: 'Simulate full technical or behavioral interview loops.',
-      details: 'Interact with AI interview agents inside our code execution sandbox. Learn how to structure answers and optimize algorithm complexities.'
+    let animationFrameId: number;
+    let targetScrollT = 0;
+    let currentT = 0;
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let prefersReducedMotion = mediaQuery.matches;
+
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      prefersReducedMotion = e.matches;
+    };
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    const handleScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate scroll progress relative to the timeline container's position in the viewport.
+      // Starts when the top of the container enters 75% of the viewport.
+      // Ends when the bottom of the container passes 25% of the viewport.
+      const startTrigger = viewportHeight * 0.75;
+      const endTrigger = viewportHeight * 0.25;
+      
+      const totalRange = containerRect.height + startTrigger - endTrigger;
+      const progress = startTrigger - containerRect.top;
+      
+      const rawT = progress / totalRange;
+      targetScrollT = Math.max(0, Math.min(1, rawT));
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    const updatePath = () => {
+      const containerRect = container.getBoundingClientRect();
+      const points = dotsRef.current
+        .filter(Boolean)
+        .map((dot) => {
+          const rect = dot!.getBoundingClientRect();
+          return {
+            x: rect.left - containerRect.left + rect.width / 2,
+            y: rect.top - containerRect.top + rect.height / 2
+          };
+        });
+
+      if (points.length < 2) return;
+
+      let d = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[i];
+        const p1 = points[i + 1];
+        const dy = p1.y - p0.y;
+        
+        const cp1x = p0.x;
+        const cp1y = p0.y + dy * 0.45;
+        const cp2x = p1.x;
+        const cp2y = p1.y - dy * 0.45;
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+      }
+
+      const bgPath = document.getElementById('bg-trail-path') as SVGPathElement | null;
+      const fgPath = document.getElementById('fg-trail-path') as SVGPathElement | null;
+
+      if (bgPath) bgPath.setAttribute('d', d);
+      if (fgPath) {
+        fgPath.setAttribute('d', d);
+        const len = fgPath.getTotalLength();
+        fgPath.style.strokeDasharray = `${len}`;
+        fgPath.style.strokeDashoffset = `${len}`;
+      }
+
+      // Recalculate target scroll progress on path resize
+      handleScroll();
+    };
+
+    updatePath();
+    window.addEventListener('resize', updatePath);
+
+    const timer1 = setTimeout(updatePath, 150);
+    const timer2 = setTimeout(updatePath, 600);
+
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      document.fonts.ready.then(updatePath);
     }
-  ];
+
+    const tick = () => {
+      const fgPath = document.getElementById('fg-trail-path') as SVGPathElement | null;
+      if (!fgPath) {
+        animationFrameId = requestAnimationFrame(tick);
+        return;
+      }
+
+      const len = fgPath.getTotalLength();
+
+      if (prefersReducedMotion) {
+        // Reduced motion: snap directly to the target scroll position with no smoothing
+        currentT = targetScrollT;
+        const pt = fgPath.getPointAtLength(currentT * len);
+        
+        if (rover) {
+          rover.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
+        }
+        
+        fgPath.style.strokeDashoffset = `${len * (1 - currentT)}`;
+        
+        const containerRect = container.getBoundingClientRect();
+        const points = dotsRef.current
+          .filter(Boolean)
+          .map((dot) => {
+            const rect = dot!.getBoundingClientRect();
+            return {
+              x: rect.left - containerRect.left + rect.width / 2,
+              y: rect.top - containerRect.top + rect.height / 2
+            };
+          });
+
+        dotsRef.current.forEach((dot, idx) => {
+          const card = dot?.closest('.milestone-card-container') as HTMLDivElement | null;
+          if (!card || !points[idx]) return;
+          const dist = Math.hypot(pt.x - points[idx].x, pt.y - points[idx].y);
+          const intensity = Math.max(0, 1 - dist / 220);
+          card.style.setProperty('--active-intensity', intensity.toFixed(3));
+        });
+
+        animationFrameId = requestAnimationFrame(tick);
+        return;
+      }
+
+      // Elastic scroll drift using linear interpolation (lerp)
+      currentT += (targetScrollT - currentT) * 0.075;
+      if (Math.abs(targetScrollT - currentT) < 0.0001) {
+        currentT = targetScrollT;
+      }
+
+      const t = currentT;
+      const pt = fgPath.getPointAtLength(t * len);
+
+      if (rover) {
+        rover.setAttribute('transform', `translate(${pt.x}, ${pt.y})`);
+      }
+
+      fgPath.style.strokeDashoffset = `${len * (1 - t)}`;
+
+      const r = Math.round(255 + (63 - 255) * t);
+      const g = Math.round(180 + (224 - 180) * t);
+      const b = Math.round(84 + (201 - 84) * t);
+      const roverColor = `rgb(${r}, ${g}, ${b})`;
+
+      const roverGlow = document.getElementById('rover-glow-circle');
+      const roverCore = document.getElementById('rover-core-circle');
+      if (roverGlow) roverGlow.setAttribute('fill', roverColor);
+      if (roverCore) roverCore.setAttribute('fill', roverColor);
+
+      const containerRect = container.getBoundingClientRect();
+      const points = dotsRef.current
+        .filter(Boolean)
+        .map((dot) => {
+          const rect = dot!.getBoundingClientRect();
+          return {
+            x: rect.left - containerRect.left + rect.width / 2,
+            y: rect.top - containerRect.top + rect.height / 2
+          };
+        });
+
+      dotsRef.current.forEach((dot, idx) => {
+        const card = dot?.closest('.milestone-card-container') as HTMLDivElement | null;
+        if (!card || !points[idx]) return;
+        const dist = Math.hypot(pt.x - points[idx].x, pt.y - points[idx].y);
+        const intensity = Math.max(0, 1 - dist / 220);
+        card.style.setProperty('--active-intensity', intensity.toFixed(3));
+      });
+
+      animationFrameId = requestAnimationFrame(tick);
+    };
+
+    animationFrameId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', updatePath);
+      mediaQuery.removeEventListener('change', handleMediaChange);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen font-sans bg-background text-foreground transition-colors duration-300 relative bg-grid-mesh">
       
-      {/* Subtle Aurora light backgrounds */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-foreground/3 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
-      <div className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-foreground/2 rounded-full blur-[150px] pointer-events-none" />
+      {/* Aurora Ambient Lighting (Aesthetic background glow) */}
+      <div className="absolute top-[-100px] left-1/4 w-[600px] h-[600px] bg-primary/4 rounded-full blur-[160px] pointer-events-none animate-pulse-slow" />
+      <div className="absolute top-[40%] right-1/4 w-[700px] h-[700px] bg-secondary/3 rounded-full blur-[180px] pointer-events-none" />
+      <div className="absolute bottom-[10%] left-10 w-[500px] h-[500px] bg-primary/3 rounded-full blur-[150px] pointer-events-none" />
 
       {/* STICKY HEADER */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <BrandLogo />
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="#process" className="hover:text-foreground transition-colors">Our Process</a>
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#categories" className="hover:text-foreground transition-colors">Paths</a>
+          {/* Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-wider text-muted-foreground">
+            <a href="#process" className="hover:text-foreground transition-colors">Winding Trail</a>
+            <a href="#features" className="hover:text-foreground transition-colors">Capabilities</a>
+            <a href="#categories" className="hover:text-foreground transition-colors">Tracks</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
             <a href="#faq" className="hover:text-foreground transition-colors">FAQs</a>
           </nav>
@@ -164,17 +371,17 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-4">
             <button 
               onClick={toggleTheme} 
-              className="p-2 rounded-full border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              className="p-2 rounded-full border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               aria-label="Toggle Theme"
             >
               {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
-            <Link href="/login" className="text-sm font-semibold hover:text-foreground transition-colors text-muted-foreground">
+            <Link href="/login" className="text-xs font-mono uppercase tracking-wider hover:text-foreground transition-colors text-muted-foreground">
               Sign In
             </Link>
             <Link 
               href="/register" 
-              className="px-4 py-2 text-sm font-bold text-background bg-foreground hover:bg-foreground/90 rounded-md transition-all active:scale-95"
+              className="px-5 py-2 text-xs font-mono uppercase tracking-wider text-background bg-primary hover:bg-primary/90 rounded transition-all active:scale-95 font-bold shadow-md shadow-primary/10"
             >
               Start Free
             </Link>
@@ -202,11 +409,11 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed inset-x-0 top-16 z-40 p-6 bg-background border-b border-border md:hidden flex flex-col gap-4 text-center font-medium"
+            className="fixed inset-x-0 top-16 z-40 p-6 bg-background border-b border-border md:hidden flex flex-col gap-4 text-center font-mono uppercase text-xs tracking-wider"
           >
-            <a href="#process" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">Our Process</a>
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">Features</a>
-            <a href="#categories" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">Paths</a>
+            <a href="#process" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">Winding Trail</a>
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">Capabilities</a>
+            <a href="#categories" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">Tracks</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">Pricing</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="py-2 text-muted-foreground hover:text-foreground">FAQs</a>
             <hr className="border-border" />
@@ -214,7 +421,7 @@ export default function LandingPage() {
             <Link 
               href="/register" 
               onClick={() => setMobileMenuOpen(false)} 
-              className="py-3 bg-foreground text-background rounded-md font-bold text-sm"
+              className="py-3 bg-primary text-background rounded font-bold"
             >
               Get Started
             </Link>
@@ -223,120 +430,119 @@ export default function LandingPage() {
       </AnimatePresence>
 
       {/* HERO SECTION */}
-      <section className="relative max-w-7xl mx-auto px-6 pt-16 md:pt-24 pb-20 text-center">
+      <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-32 pb-24 text-center overflow-hidden">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
           className="flex flex-col items-center"
         >
-          <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/30 text-xs text-foreground font-semibold tracking-wide">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Next Generation Career roadmap simulator</span>
+          <div className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card text-[10px] font-mono uppercase tracking-widest text-primary">
+            <Sparkles className="w-3 h-3" />
+            <span>AI Career Training Pipeline v1.2</span>
           </div>
 
-          <h1 className="max-w-4xl font-display font-extrabold text-4xl md:text-6xl lg:text-7xl leading-tight tracking-tight text-foreground">
-            Tech Careers are not born. <br />
-            They are <span className="underline decoration-1 underline-offset-8">trained.</span>
+          <h1 className="max-w-5xl font-display font-bold text-4xl md:text-6xl lg:text-7xl leading-tight tracking-tight text-foreground">
+            Tech Careers are not born.<br />
+            They are <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">trained.</span>
           </h1>
 
-          <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed">
-            The AI agent workforce that designs customized training environments, feedback loops, and evaluation pipelines to bridge your gap to tech mastery.
+          <p className="mt-6 max-w-2xl text-sm md:text-base text-muted-foreground leading-relaxed">
+            A comprehensive, automated training simulator designing personalized roadmap trails, real-time code executions, resume diagnostic loops, and AI mock evaluations.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md">
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center w-full max-w-sm">
             <Link 
               href="/register" 
-              className="flex-1 px-6 py-3.5 text-sm font-bold text-background bg-foreground hover:bg-foreground/90 rounded-md transition-all flex items-center justify-center gap-2 group active:scale-95"
+              className="px-6 py-3.5 text-xs font-mono uppercase tracking-wider text-background bg-primary hover:bg-primary/95 rounded transition-all flex items-center justify-center gap-2 group active:scale-95 font-bold shadow-md shadow-primary/10"
             >
               <span>Explore Roadmaps</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
               href="/login" 
-              className="flex-1 px-6 py-3.5 text-sm font-semibold border border-border hover:bg-muted rounded-md transition-colors flex items-center justify-center"
+              className="px-6 py-3.5 text-xs font-mono uppercase tracking-wider border border-border hover:bg-card rounded transition-colors flex items-center justify-center font-bold text-foreground"
             >
               Sign In
             </Link>
           </div>
         </motion.div>
 
-        {/* HERO FLOAT CARD (Mockup Screen) */}
+        {/* HERO SHOWCASE CARD (Mockup Screen with Scroll-linked Minimize to Maximize animation) */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1 }}
+          ref={mockupRef}
+          style={{ scale, opacity, y }}
           className="mt-16 md:mt-24 max-w-4xl mx-auto rounded-lg overflow-hidden border border-border bg-card shadow-2xl relative"
         >
           {/* Windows title bar mockup */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40 font-mono text-[10px] text-muted-foreground">
             <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-border" />
-              <div className="w-2.5 h-2.5 rounded-full bg-border" />
-              <div className="w-2.5 h-2.5 rounded-full bg-border" />
+              <div className="w-2 h-2 rounded-full bg-[#ef4444]/60" />
+              <div className="w-2 h-2 rounded-full bg-[#ffb454]/60" />
+              <div className="w-2 h-2 rounded-full bg-[#3fe0c9]/60" />
             </div>
-            <span className="text-[10px] text-muted-foreground font-mono">roadmap_agent_runtime.sh</span>
-            <div className="w-10" />
+            <span>active_timeline_session.sh</span>
+            <div className="w-8" />
           </div>
 
-          <div className="bg-background p-4 md:p-8 grid md:grid-cols-3 gap-6 text-left">
-            <div className="md:col-span-2 space-y-4">
-              <h3 className="text-lg font-bold font-display flex items-center gap-2 text-foreground">
-                <Map className="w-4.5 h-4.5 text-foreground" />
+          <div className="bg-background/45 p-6 md:p-8 grid md:grid-cols-3 gap-6 text-left">
+            <div className="md:col-span-2 space-y-5">
+              <h3 className="text-base font-bold font-display flex items-center gap-2 text-foreground">
+                <Map className="w-4 h-4 text-primary" />
                 <span>AI Engineering Training Roadmap</span>
-                <span className="px-2 py-0.5 text-[10px] border border-border rounded-full font-medium text-muted-foreground bg-muted/50">Active Session</span>
+                <span className="px-2 py-0.5 text-[9px] font-mono border border-primary/25 rounded bg-primary/5 text-primary">Active</span>
               </h3>
               
-              <div className="p-4 rounded-md border border-border bg-muted/10 space-y-3">
-                <div className="flex justify-between text-xs font-semibold text-muted-foreground">
-                  <span>Module 1: Transformers & LLM Architectures</span>
-                  <span>45% Complete</span>
+              <div className="p-4 rounded border border-border bg-card/45 space-y-3 font-sans">
+                <div className="flex justify-between text-xs font-mono">
+                  <span className="text-muted-foreground">Module 1: Transformers & LLM Architectures</span>
+                  <span className="text-secondary font-bold">45% Complete</span>
                 </div>
-                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-foreground h-full rounded-full" style={{ width: '45%' }} />
+                <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary to-secondary h-full rounded-full" style={{ width: '45%' }} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-3 p-3 rounded-md border border-border bg-muted/5">
-                  <Flame className="w-4 h-4 text-foreground animate-pulse" />
+                <div className="flex items-center gap-3 p-3 rounded border border-border bg-card/25 font-sans">
+                  <Flame className="w-4 h-4 text-primary animate-pulse" />
                   <div>
                     <h4 className="text-xs font-bold text-foreground">Daily Activity Streak</h4>
-                    <p className="text-[11px] text-muted-foreground">Daily pipeline evaluation successful. Streak: 12 days (+15 XP)</p>
+                    <p className="text-[10px] text-muted-foreground">Pipeline compilation successful. Streak: 12 days (+15 XP)</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider pb-1">Evaluations</h4>
+            <div className="space-y-4 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 font-mono text-[10px]">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pb-1 font-mono">Evaluations</h4>
               
-              <div className="space-y-3 font-medium text-xs">
+              <div className="space-y-3.5">
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1 text-muted-foreground">
+                  <div className="flex justify-between mb-1.5 text-muted-foreground">
                     <span>Python Runtime</span>
                     <span className="text-foreground">90%</span>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-1">
-                    <div className="bg-foreground h-full rounded-full" style={{ width: '90%' }} />
+                  <div className="w-full bg-muted/20 rounded-full h-1">
+                    <div className="bg-secondary h-full rounded-full" style={{ width: '90%' }} />
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1 text-muted-foreground">
+                  <div className="flex justify-between mb-1.5 text-muted-foreground">
                     <span>Model Fine-tuning</span>
                     <span className="text-foreground">55%</span>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-1">
-                    <div className="bg-foreground/60 h-full rounded-full" style={{ width: '55%' }} />
+                  <div className="w-full bg-muted/20 rounded-full h-1">
+                    <div className="bg-primary h-full rounded-full" style={{ width: '55%' }} />
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-[11px] mb-1 text-muted-foreground">
+                  <div className="flex justify-between mb-1.5 text-muted-foreground">
                     <span>RLHF Pipeline</span>
                     <span className="text-foreground">30%</span>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-1">
-                    <div className="bg-foreground/30 h-full rounded-full" style={{ width: '30%' }} />
+                  <div className="w-full bg-muted/20 rounded-full h-1">
+                    <div className="bg-primary/45 h-full rounded-full" style={{ width: '30%' }} />
                   </div>
                 </div>
               </div>
@@ -345,88 +551,139 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* PROCESS TIMELINE SECTION (Ethara style) */}
-      <section id="process" className="py-20 max-w-7xl mx-auto px-6 border-t border-border">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Stepped Lifecycle</span>
-          <h2 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight mt-2 text-foreground">
-            Our Training Process
+      {/* PROCESS TIMELINE SECTION (Trail Map Concept) */}
+      <section id="process" className="py-24 border-t border-border overflow-visible">
+        <div className="max-w-7xl mx-auto px-6 mb-16 text-center">
+          <span className="font-mono text-xs uppercase tracking-widest text-primary">Map Timeline</span>
+          <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
+            The Interactive Career Trail
           </h2>
-          <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
-            How our platform guides you from your current skill parameters to job-ready expertise.
+          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground text-xs md:text-sm leading-relaxed">
+            Follow the winding trail map to see how the system coordinates profile feedback, real-time exercises, mock evaluations, and job-ready status. Watch the glowing marker travel the route.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-2">
-          {processSteps.map((step, idx) => (
-            <div 
-              key={idx}
-              onMouseEnter={() => setActiveStep(idx)}
-              onClick={() => setActiveStep(idx)}
-              className={`p-6 border rounded-lg transition-all duration-300 cursor-pointer flex flex-col justify-between ${
-                activeStep === idx 
-                  ? 'border-foreground bg-muted/20 shadow-md' 
-                  : 'border-border bg-card/25 hover:border-muted-foreground/50'
-              }`}
-            >
-              <div>
-                <span className={`font-mono text-2xl font-bold tracking-tight block ${
-                  activeStep === idx ? 'text-foreground' : 'text-muted-foreground/40'
-                }`}>
-                  {step.num}
-                </span>
-                <h3 className="font-display font-bold text-sm mt-4 text-foreground">{step.title}</h3>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{step.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Outer container of the responsive timeline path */}
+        <div 
+          ref={containerRef} 
+          className="relative w-full max-w-4xl mx-auto py-16 px-6 md:px-12 overflow-visible"
+        >
+          {/* SVG path system overlaying the elements */}
+          <svg 
+            className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-visible"
+            style={{ minHeight: '100%' }}
+          >
+            <defs>
+              <linearGradient id="trail-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#ffb454" />
+                <stop offset="100%" stopColor="#3fe0c9" />
+              </linearGradient>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            
+            {/* Background path track */}
+            <path 
+              id="bg-trail-path" 
+              stroke="#162028" 
+              strokeWidth={3} 
+              strokeLinecap="round"
+              fill="none" 
+            />
+            
+            {/* Active (glowing) path track */}
+            <path 
+              id="fg-trail-path" 
+              stroke="url(#trail-gradient)" 
+              strokeWidth={3.5} 
+              strokeLinecap="round"
+              fill="none" 
+              ref={activePathRef}
+            />
+            
+            {/* Active glowing rover element */}
+            <g id="rover-group" ref={roverRef}>
+              <circle id="rover-glow-circle" r={10} fill="#ffb454" filter="url(#glow)" opacity={0.8} />
+              <circle id="rover-core-circle" r={3.5} fill="#ffffff" />
+            </g>
+          </svg>
 
-        {/* Process Detail Showcase Box */}
-        <div className="mt-6 p-6 md:p-8 border border-border bg-card rounded-lg relative overflow-hidden min-h-[140px] flex items-center justify-between">
-          <div className="max-w-3xl">
-            <h4 className="font-display font-extrabold text-base text-foreground flex items-center gap-2 mb-2">
-              <span className="font-mono text-xs text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded">
-                Step {processSteps[activeStep].num} Detail
-              </span>
-              <span>{processSteps[activeStep].title}</span>
-            </h4>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {processSteps[activeStep].details}
-            </p>
-          </div>
-          <div className="hidden md:block opacity-10">
-            <Compass className="w-24 h-24" />
+          {/* Milestone Cards list */}
+          <div className="relative z-10 flex flex-col gap-12 md:gap-24 pl-8 md:pl-0">
+            {processSteps.map((step, idx) => (
+              <div 
+                key={idx}
+                className={`w-full md:w-[45%] flex flex-col relative group milestone-card-container ${
+                  idx % 2 === 0 ? 'md:mr-auto' : 'md:ml-auto'
+                }`}
+                style={{ '--active-intensity': 0 } as any}
+              >
+                {/* Dot Anchor centered inside the card on desktop, on the left rail on mobile */}
+                <div 
+                  ref={el => { dotsRef.current[idx] = el }}
+                  className="absolute w-3 h-3 rounded-full bg-background border-2 border-primary z-30 transition-all duration-300
+                             md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2
+                             left-[-22px] top-[28px]"
+                />
+                
+                {/* Interactive Card Body */}
+                <div className="milestone-card p-6 md:p-8 rounded border bg-card/75 backdrop-blur-md relative overflow-hidden">
+                  {/* Step label styling */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-secondary font-semibold">
+                      Milestone {idx + 1}
+                    </span>
+                    <span className="font-mono text-xl font-bold milestone-step-num">
+                      {step.num}
+                    </span>
+                  </div>
+                  
+                  {/* Display title and description */}
+                  <h3 className="font-display font-bold text-base milestone-card-title mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="font-sans text-xs text-muted-foreground leading-relaxed">
+                    {step.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
-      <section id="features" className="py-20 max-w-7xl mx-auto px-6 border-t border-border">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Core Modules</span>
-          <h2 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight mt-2 text-foreground">
+      {/* FEATURES GRID SECTION */}
+      <section id="features" className="py-24 max-w-7xl mx-auto px-6 border-t border-border">
+        <div className="text-center mb-20">
+          <span className="font-mono text-xs uppercase tracking-widest text-primary">System Architecture</span>
+          <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             Platform Capabilities
           </h2>
-          <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
-            Everything you need to successfully transition careers or master new technical domains in one workspace.
+          <p className="mt-4 text-muted-foreground text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
+            Everything you need to successfully transition careers or master new technical domains in one secure runtime environment.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 6 cards, 3 columns with hairline dividers */}
+        <div className="grid grid-cols-1 md:grid-cols-3 border-l border-t border-border">
           {features.map((feat, idx) => {
             const Icon = feat.icon;
             return (
               <div
                 key={idx}
-                className="p-6 rounded-lg border border-border bg-card flex flex-col justify-between hover:border-foreground/50 transition-all duration-300"
+                className="p-8 border-r border-b border-border bg-card/30 flex flex-col justify-between hover:bg-card/65 transition-all duration-300 group"
               >
                 <div>
-                  <div className="w-10 h-10 rounded border border-border bg-muted/40 flex items-center justify-center text-foreground mb-6">
-                    <Icon className="w-4.5 h-4.5" />
+                  <div className="w-10 h-10 rounded border border-border bg-muted/40 flex items-center justify-center text-primary mb-8 group-hover:border-primary/45 transition-colors">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <h3 className="font-display font-bold text-sm text-foreground mb-2">{feat.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{feat.desc}</p>
+                  <h3 className="font-display font-bold text-sm text-foreground mb-3">{feat.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed font-sans">{feat.desc}</p>
                 </div>
               </div>
             );
@@ -434,28 +691,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PATHS SECTION */}
-      <section id="categories" className="py-20 max-w-7xl mx-auto px-6 border-t border-border">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Pre-configured Tracks</span>
-          <h2 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight mt-2 text-foreground">
+      {/* CURATED TRACKS SECTION */}
+      <section id="categories" className="py-24 max-w-7xl mx-auto px-6 border-t border-border">
+        <div className="text-center mb-20">
+          <span className="font-mono text-xs uppercase tracking-widest text-primary">Pre-configured Paths</span>
+          <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             Explore Curated Careers
           </h2>
-          <p className="mt-4 text-muted-foreground text-sm">
-            Generate structures and roadmaps across the most demanded fields in industry.
+          <p className="mt-4 text-muted-foreground text-xs md:text-sm max-w-2xl mx-auto leading-relaxed">
+            Generate customized, weekly roadmap tracks across high-demand engineering categories.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {categories.map((cat, idx) => {
             const Icon = cat.icon;
             return (
-              <div key={idx} className="p-6 rounded-lg border border-border bg-card/40 hover:bg-card hover:border-foreground/45 transition-all duration-300">
-                <div className="w-10 h-10 rounded border border-border bg-muted/40 flex items-center justify-center text-foreground mb-6">
-                  <Icon className="w-4.5 h-4.5" />
+              <div key={idx} className="p-8 rounded border border-border bg-card/25 hover:bg-card/75 hover:border-primary/30 transition-all duration-300 flex flex-col justify-between min-h-[220px] group">
+                <div>
+                  <div className="w-10 h-10 rounded border border-border bg-muted/40 flex items-center justify-center text-secondary mb-6 group-hover:border-secondary/40 transition-colors">
+                    <Icon className="w-4.5 h-4.5" />
+                  </div>
+                  <h3 className="font-display font-bold text-sm text-foreground mb-3">{cat.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed font-sans">{cat.desc}</p>
                 </div>
-                <h3 className="font-display font-bold text-sm text-foreground mb-2">{cat.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{cat.desc}</p>
               </div>
             );
           })}
@@ -463,94 +722,94 @@ export default function LandingPage() {
       </section>
 
       {/* PRICING SECTION */}
-      <section id="pricing" className="py-20 max-w-7xl mx-auto px-6 border-t border-border">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Scaling Plans</span>
-          <h2 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight mt-2 text-foreground">
-            Transparent Pricing
+      <section id="pricing" className="py-24 max-w-7xl mx-auto px-6 border-t border-border">
+        <div className="text-center mb-20">
+          <span className="font-mono text-xs uppercase tracking-widest text-primary">Scaling Licenses</span>
+          <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
+            Transparent Scaling Plans
           </h2>
-          <p className="mt-4 text-muted-foreground text-sm">
-            Choose the plan that matches your current speed of professional growth.
+          <p className="mt-4 text-muted-foreground text-xs md:text-sm max-w-2xl mx-auto">
+            Choose the membership that matches your speed of professional timeline execution.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Tier */}
-          <div className="p-8 rounded-lg border border-border bg-card/45 flex flex-col justify-between relative overflow-hidden">
+          <div className="p-8 rounded border border-border bg-card/45 flex flex-col justify-between relative overflow-hidden">
             <div>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Standard</span>
-              <h3 className="text-2xl font-display font-extrabold mt-2 text-foreground">Free Plan</h3>
-              <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
-                Perfect for students and developers starting to organize simple learning goals.
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Standard</span>
+              <h3 className="text-xl font-display font-bold mt-2 text-foreground">Free Plan</h3>
+              <p className="text-xs text-muted-foreground mt-4 leading-relaxed font-sans">
+                Perfect for developers beginning to organize baseline career milestones.
               </p>
-              <div className="my-8 text-4xl font-display font-extrabold text-foreground">
-                $0 <span className="text-xs font-medium text-muted-foreground">/ forever</span>
+              <div className="my-8 text-3xl font-display font-bold text-foreground">
+                $0 <span className="font-mono text-[10px] text-muted-foreground">/ forever</span>
               </div>
-              <ul className="space-y-3.5 text-xs font-medium">
+              <ul className="space-y-4 text-xs">
                 <li className="flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-foreground" />
-                  <span>2 Active Roadmaps</span>
+                  <Flame className="w-3.5 h-3.5 text-primary" />
+                  <span>2 Active Roadmap Trails</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-foreground" />
-                  <span>Standard AI assessments</span>
+                  <Flame className="w-3.5 h-3.5 text-primary" />
+                  <span>Standard skill quiz evaluations</span>
                 </li>
-                <li className="flex items-center gap-2 text-muted-foreground/40">
-                  <X className="w-4 h-4" />
-                  <span>ATS Resume evaluations</span>
+                <li className="flex items-center gap-2 text-muted-foreground/35">
+                  <X className="w-3.5 h-3.5" />
+                  <span>Custom resume diagnostics</span>
                 </li>
-                <li className="flex items-center gap-2 text-muted-foreground/40">
-                  <X className="w-4 h-4" />
-                  <span>Mock technical interviews</span>
+                <li className="flex items-center gap-2 text-muted-foreground/35">
+                  <X className="w-3.5 h-3.5" />
+                  <span>AI mock interviewer access</span>
                 </li>
               </ul>
             </div>
             <Link 
               href="/register" 
-              className="mt-8 py-3 text-center text-xs font-bold border border-border hover:bg-muted rounded-md transition-colors text-foreground"
+              className="mt-8 py-3 text-center text-xs font-mono uppercase tracking-wider border border-border hover:bg-card rounded transition-colors text-foreground font-bold"
             >
               Get Started Free
             </Link>
           </div>
 
           {/* Premium Tier */}
-          <div className="p-8 rounded-lg border border-foreground bg-card/60 flex flex-col justify-between relative overflow-hidden">
-            {/* Pop highlight */}
-            <div className="absolute top-0 right-0 px-3 py-1 bg-foreground text-background text-[9px] uppercase tracking-wider font-extrabold rounded-bl">
+          <div className="p-8 rounded border border-primary bg-card/65 flex flex-col justify-between relative overflow-hidden shadow-lg shadow-primary/5">
+            {/* Pop badge */}
+            <div className="absolute top-0 right-0 px-4 py-1.5 bg-primary text-background text-[9px] font-mono uppercase tracking-widest font-extrabold rounded-bl">
               Popular
             </div>
 
             <div>
-              <span className="text-xs uppercase tracking-wider text-foreground font-bold">Accelerate</span>
-              <h3 className="text-2xl font-display font-extrabold mt-2 text-foreground">Premium Pro</h3>
-              <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
-                Designed for engineers preparing to clear FAANG-level technical interview rounds.
+              <span className="font-mono text-[10px] uppercase tracking-widest text-primary font-semibold">Accelerate</span>
+              <h3 className="text-xl font-display font-bold mt-2 text-foreground">Premium Pro</h3>
+              <p className="text-xs text-muted-foreground mt-4 leading-relaxed font-sans">
+                Designed for engineers preparing to clear specialized technical interview loops.
               </p>
-              <div className="my-8 text-4xl font-display font-extrabold text-foreground">
-                $1.1 <span className="text-xs font-medium text-muted-foreground">/ month</span>
+              <div className="my-8 text-3xl font-display font-bold text-foreground">
+                $1.1 <span className="font-mono text-[10px] text-muted-foreground">/ month</span>
               </div>
-              <ul className="space-y-3.5 text-xs font-medium">
+              <ul className="space-y-4 text-xs">
                 <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-foreground" />
-                  <span>Unlimited Roadmaps & AI updates</span>
+                  <Sparkles className="w-3.5 h-3.5 text-secondary" />
+                  <span>Unlimited Roadmaps & active tracking</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-foreground" />
-                  <span>Detailed programming MCQ sessions</span>
+                  <Sparkles className="w-3.5 h-3.5 text-secondary" />
+                  <span>Detailed programming sandboxes</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-foreground" />
-                  <span>Unlimited ATS resume reviews</span>
+                  <Sparkles className="w-3.5 h-3.5 text-secondary" />
+                  <span>Unlimited resume keyword scans</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-foreground" />
-                  <span>Live mock coding & HR interview bots</span>
+                  <Sparkles className="w-3.5 h-3.5 text-secondary" />
+                  <span>Full behavioral & coding interview bots</span>
                 </li>
               </ul>
             </div>
             <Link 
               href="/register?plan=premium" 
-              className="mt-8 py-3 text-center text-xs font-bold text-background bg-foreground hover:bg-foreground/90 rounded-md transition-all shadow-sm"
+              className="mt-8 py-3 text-center text-xs font-mono uppercase tracking-wider text-background bg-primary hover:bg-primary/90 rounded transition-all font-bold"
             >
               Upgrade Now
             </Link>
@@ -559,10 +818,10 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ SECTION */}
-      <section id="faq" className="py-20 max-w-4xl mx-auto px-6 border-t border-border">
-        <div className="text-center mb-16">
-          <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Answers</span>
-          <h2 className="text-3xl md:text-5xl font-display font-extrabold tracking-tight mt-2 text-foreground">
+      <section id="faq" className="py-24 max-w-4xl mx-auto px-6 border-t border-border">
+        <div className="text-center mb-20">
+          <span className="font-mono text-xs uppercase tracking-widest text-primary">Documentation</span>
+          <h2 className="text-3xl md:text-5xl font-display font-bold tracking-tight mt-2 text-foreground">
             Frequently Asked Questions
           </h2>
         </div>
@@ -571,11 +830,11 @@ export default function LandingPage() {
           {faqList.map((faq, idx) => (
             <div 
               key={idx} 
-              className="border border-border rounded-md overflow-hidden bg-card/25"
+              className="border border-border rounded bg-card/20 overflow-hidden"
             >
               <button
                 onClick={() => setActiveFAQ(activeFAQ === idx ? null : idx)}
-                className="w-full flex justify-between items-center px-6 py-4.5 text-left font-display font-bold text-sm text-foreground hover:bg-muted/40 transition-colors"
+                className="w-full flex justify-between items-center px-6 py-4 text-left font-display font-bold text-sm text-foreground hover:bg-card/45 transition-colors cursor-pointer"
               >
                 <span>{faq.q}</span>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${activeFAQ === idx ? 'rotate-180' : ''}`} />
@@ -589,7 +848,7 @@ export default function LandingPage() {
                     exit={{ height: 0 }}
                     className="overflow-hidden"
                   >
-                    <p className="px-6 pb-6 text-xs text-muted-foreground leading-relaxed">
+                    <p className="px-6 pb-6 text-xs text-muted-foreground leading-relaxed font-sans">
                       {faq.a}
                     </p>
                   </motion.div>
@@ -600,15 +859,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CONTACT SECTION */}
-      <section className="py-20 max-w-3xl mx-auto px-6 border-t border-border text-center">
-        <div className="p-8 md:p-12 rounded-lg border border-border bg-card">
-          <Mail className="w-8 h-8 text-foreground mx-auto mb-6" />
-          <h2 className="text-2xl md:text-4xl font-display font-extrabold tracking-tight mb-4 text-foreground">
+      {/* CONTACT/NEWSLETTER SECTION */}
+      <section className="py-24 max-w-3xl mx-auto px-6 border-t border-border text-center">
+        <div className="p-8 md:p-12 rounded border border-border bg-card/35 backdrop-blur-md">
+          <Mail className="w-8 h-8 text-primary mx-auto mb-6" />
+          <h2 className="text-2xl md:text-4xl font-display font-bold tracking-tight mb-4 text-foreground">
             Stay in the loop
           </h2>
-          <p className="text-muted-foreground text-xs max-w-md mx-auto mb-8 leading-relaxed">
-            Subscribe to our pipeline logs to receive the latest roadmaps, study resources, and interview patterns directly.
+          <p className="text-muted-foreground text-xs max-w-sm mx-auto mb-8 leading-relaxed font-sans">
+            Subscribe to our newsletter logs to receive framework roadmaps, study resources, and interview patterns directly.
           </p>
           <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
             <input 
@@ -617,12 +876,12 @@ export default function LandingPage() {
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               required
-              className="flex-grow px-4 py-3 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-foreground text-xs font-semibold"
+              className="flex-grow px-4 py-3 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-xs font-sans text-foreground"
             />
             <button 
               type="submit" 
               disabled={subscribingNewsletter}
-              className="px-6 py-3 bg-foreground text-background font-bold rounded text-xs shadow hover:bg-foreground/90 transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-primary text-background font-mono uppercase tracking-wider font-bold rounded text-xs shadow hover:bg-primary/95 transition-all disabled:opacity-50 cursor-pointer"
             >
               {subscribingNewsletter ? 'Subscribing...' : 'Subscribe'}
             </button>
@@ -631,16 +890,16 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-border py-12 bg-muted/20">
+      <footer className="border-t border-border py-12 bg-card/25">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <BrandLogo />
-          <p className="text-[11px] text-muted-foreground">
-            &copy; 2026 Roadmap.AI Inc. Built with Next.js 15, Tailwind v4 and Framer Motion.
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+            &copy; 2026 Roadmap.AI Inc. Built with Space Grotesk, Inter, and IBM Plex Mono.
           </p>
-          <div className="flex gap-6 text-[11px] text-muted-foreground font-semibold">
-            <button onClick={() => setPrivacyModalOpen(true)} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-inherit font-inherit">Privacy</button>
-            <button onClick={() => setTermsModalOpen(true)} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-inherit font-inherit">Terms</button>
-            <button onClick={() => setContactModalOpen(true)} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0 text-inherit font-inherit">Contact</button>
+          <div className="flex gap-6 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+            <button onClick={() => setPrivacyModalOpen(true)} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0">Privacy</button>
+            <button onClick={() => setTermsModalOpen(true)} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0">Terms</button>
+            <button onClick={() => setContactModalOpen(true)} className="hover:text-foreground transition-colors cursor-pointer bg-transparent border-none p-0">Contact</button>
           </div>
         </div>
       </footer>
@@ -653,38 +912,38 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
-              className="bg-background border border-border max-w-xl w-full p-6 md:p-8 space-y-4 max-h-[80vh] overflow-y-auto relative rounded-lg shadow-2xl"
+              className="bg-card border border-border max-w-xl w-full p-6 md:p-8 space-y-4 max-h-[80vh] overflow-y-auto relative rounded shadow-2xl"
             >
               <button
                 onClick={() => setPrivacyModalOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
               </button>
-              <h3 className="text-xl font-display font-extrabold text-foreground">Privacy Policy</h3>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Last updated: June 2026
+              <h3 className="text-xl font-display font-bold text-foreground">Privacy Policy</h3>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                Last updated: August 2026
               </p>
-              <div className="space-y-4 text-xs text-muted-foreground leading-relaxed">
+              <div className="space-y-4 text-xs text-muted-foreground leading-relaxed font-sans">
                 <p>
                   At <strong>Roadmap.AI</strong>, we are committed to safeguarding your private data. This document outlines how we collect, store, and process your profile credentials.
                 </p>
-                <h4 className="font-bold font-display text-foreground text-xs uppercase tracking-wide">1. Data Collection</h4>
+                <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">1. Data Collection</h4>
                 <p>
                   We store credentials such as your email address, career goals, technical skills, resume texts, and activity heatmap logs to generate customized timelines.
                 </p>
-                <h4 className="font-bold font-display text-foreground text-xs uppercase tracking-wide">2. Security & Encryption</h4>
+                <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">2. Security & Encryption</h4>
                 <p>
                   All active passwords are hashed using bcrypt. Access tokens are transmitted over TLS/SSL and stored securely inside httpOnly client cookies to prevent cross-site scripting (XSS) leaks.
                 </p>
-                <h4 className="font-bold font-display text-foreground text-xs uppercase tracking-wide">3. Analytics & Stripe Integration</h4>
+                <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">3. Analytics & Stripe Integration</h4>
                 <p>
                   Subscription transactions are handled end-to-end by Stripe. We do not store or process raw credit card credentials on our servers.
                 </p>
@@ -699,38 +958,38 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
-              className="bg-background border border-border max-w-xl w-full p-6 md:p-8 space-y-4 max-h-[80vh] overflow-y-auto relative rounded-lg shadow-2xl"
+              className="bg-card border border-border max-w-xl w-full p-6 md:p-8 space-y-4 max-h-[80vh] overflow-y-auto relative rounded shadow-2xl"
             >
               <button
                 onClick={() => setTermsModalOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
               </button>
-              <h3 className="text-xl font-display font-extrabold text-foreground">Terms of Service</h3>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Last updated: June 2026
+              <h3 className="text-xl font-display font-bold text-foreground">Terms of Service</h3>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                Last updated: August 2026
               </p>
-              <div className="space-y-4 text-xs text-muted-foreground leading-relaxed">
+              <div className="space-y-4 text-xs text-muted-foreground leading-relaxed font-sans">
                 <p>
                   By accessing <strong>Roadmap.AI</strong>, you agree to comply with our acceptable terms.
                 </p>
-                <h4 className="font-bold font-display text-foreground text-xs uppercase tracking-wide">1. Account Provisioning</h4>
+                <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">1. Account Provisioning</h4>
                 <p>
                   You must provide valid credentials during registration. Sharing account tokens or subverting subscription gates is strictly prohibited.
                 </p>
-                <h4 className="font-bold font-display text-foreground text-xs uppercase tracking-wide">2. Acceptable Platform Use</h4>
+                <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">2. Acceptable Platform Use</h4>
                 <p>
                   Our timeline resources, assessment builders, and interview agents are designed for personal professional coaching. Systematic scraping or copying is a violation of our terms.
                 </p>
-                <h4 className="font-bold font-display text-foreground text-xs uppercase tracking-wide">3. Service Modifications</h4>
+                <h4 className="font-mono font-bold text-foreground text-xs uppercase tracking-widest">3. Service Modifications</h4>
                 <p>
                   We reserve the rights to refine, rate-limit, or adjust the limits of free roadmap generations as needed to optimize GPU/LLM request capacities.
                 </p>
@@ -745,65 +1004,65 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 10 }}
-              className="bg-background border border-border max-w-md w-full p-6 md:p-8 space-y-5 relative rounded-lg shadow-2xl"
+              className="bg-card border border-border max-w-md w-full p-6 md:p-8 space-y-5 relative rounded shadow-2xl"
             >
               <button
                 onClick={() => setContactModalOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
               </button>
               <div className="space-y-2">
-                <h3 className="text-xl font-display font-extrabold text-foreground">Contact Support</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <h3 className="text-xl font-display font-bold text-foreground">Contact Support</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed font-sans">
                   Send us a message and our support team will reply via email.
                 </p>
               </div>
               <form onSubmit={handleContactSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider">Your Name</label>
+                  <label className="font-mono text-[9px] font-bold text-foreground/80 uppercase tracking-widest">Your Name</label>
                   <input
                     type="text"
                     required
                     value={contactForm.name}
                     onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                     placeholder="Enter your name"
-                    className="w-full px-3.5 py-2.5 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-foreground text-xs font-semibold text-foreground placeholder:text-muted-foreground/30"
+                    className="w-full px-3.5 py-2.5 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-xs font-sans text-foreground placeholder:text-muted-foreground/30"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider">Email Address</label>
+                  <label className="font-mono text-[9px] font-bold text-foreground/80 uppercase tracking-widest">Email Address</label>
                   <input
                     type="email"
                     required
                     value={contactForm.email}
                     onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                     placeholder="Enter your email"
-                    className="w-full px-3.5 py-2.5 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-foreground text-xs font-semibold text-foreground placeholder:text-muted-foreground/30"
+                    className="w-full px-3.5 py-2.5 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-xs font-sans text-foreground placeholder:text-muted-foreground/30"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wider">Message</label>
+                  <label className="font-mono text-[9px] font-bold text-foreground/80 uppercase tracking-widest">Message</label>
                   <textarea
                     required
                     rows={4}
                     value={contactForm.message}
                     onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                     placeholder="Describe how we can help you..."
-                    className="w-full px-3.5 py-2.5 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-foreground text-xs font-semibold resize-none text-foreground placeholder:text-muted-foreground/30"
+                    className="w-full px-3.5 py-2.5 rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary text-xs font-sans resize-none text-foreground placeholder:text-muted-foreground/30"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={submittingContact}
-                  className="w-full py-3 bg-foreground text-background font-bold rounded text-xs shadow hover:bg-foreground/90 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  className="w-full py-3 bg-primary text-background font-mono uppercase tracking-wider font-bold rounded text-xs shadow hover:bg-primary/95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {submittingContact && <Loader2 className="w-4 h-4 animate-spin" />}
                   Send Message
@@ -817,7 +1076,6 @@ export default function LandingPage() {
   );
 }
 
-// Simple fallback CloudIcon since Lucide renamed it or in case it misses in local builds
 function CloudIcon(props: any) {
   return (
     <svg
@@ -836,3 +1094,4 @@ function CloudIcon(props: any) {
     </svg>
   );
 }
+
