@@ -27,22 +27,7 @@ export class AIService {
   ): Promise<any> {
     if (isMock || !ai) {
       console.log('Using mock roadmap generator...');
-      const mock = this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage);
-      mock.estimatedDuration = `${targetDuration} Months`;
-      if (mock.timeline && Array.isArray(mock.timeline)) {
-        if (mock.timeline.length > targetDuration) {
-          mock.timeline = mock.timeline.slice(0, targetDuration);
-        } else {
-          const originalTimeline = [...mock.timeline];
-          while (mock.timeline.length < targetDuration) {
-            const nextMonthIndex = mock.timeline.length + 1;
-            const templateMonth = JSON.parse(JSON.stringify(originalTimeline[(nextMonthIndex - 1) % originalTimeline.length]));
-            templateMonth.monthNumber = nextMonthIndex;
-            templateMonth.title = `Month ${nextMonthIndex}: Advanced ${goal} Scaling`;
-            mock.timeline.push(templateMonth);
-          }
-        }
-      }
+      const mock = this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage, targetDuration);
       return mock;
     }
 
@@ -127,24 +112,7 @@ export class AIService {
       return JSON.parse(text);
     } catch (error) {
       console.error('Gemini Roadmap Generation Error, falling back to mock:', error);
-      // Fallback to mock data and format to targetDuration
-      const mock = this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage);
-      mock.estimatedDuration = `${targetDuration} Months`;
-      if (mock.timeline && Array.isArray(mock.timeline)) {
-        if (mock.timeline.length > targetDuration) {
-          mock.timeline = mock.timeline.slice(0, targetDuration);
-        } else {
-          const originalTimeline = [...mock.timeline];
-          while (mock.timeline.length < targetDuration) {
-            const nextMonthIndex = mock.timeline.length + 1;
-            const templateMonth = JSON.parse(JSON.stringify(originalTimeline[(nextMonthIndex - 1) % originalTimeline.length]));
-            templateMonth.monthNumber = nextMonthIndex;
-            templateMonth.title = `Month ${nextMonthIndex}: Advanced ${goal} Scaling`;
-            mock.timeline.push(templateMonth);
-          }
-        }
-      }
-      return mock;
+      return this.getMockRoadmap(goal, skills, learningStyle, preferredLanguage, targetDuration);
     }
   }
 
@@ -630,7 +598,7 @@ export class AIService {
 
   // --- MOCK DATA FALLBACKS ---
 
-  private static getMockRoadmap(goal: string, skills: string[], style: string, lang: string): any {
+  private static getMockRoadmap(goal: string, skills: string[], style: string, lang: string, targetDuration: number = 3): any {
     // Determine difficulty based on user's existing skills
     const hasSkills = skills && skills.length > 0;
     const difficulty = hasSkills ? 'intermediate' : 'beginner';
@@ -651,117 +619,233 @@ export class AIService {
       links,
     });
 
+    // Phase labels per month index (0-based)
+    const phaseLabels = [
+      { label: 'Foundations', difficulty: 'beginner' as const, topicOffset: 0 },
+      { label: 'Intermediate & Integration', difficulty: 'intermediate' as const, topicOffset: 2 },
+      { label: 'Advanced & System Design', difficulty: 'advanced' as const, topicOffset: 4 },
+      { label: 'Specialisation & Capstone', difficulty: 'advanced' as const, topicOffset: 0 },
+      { label: 'Professional Mastery', difficulty: 'advanced' as const, topicOffset: 2 },
+      { label: 'Portfolio & Job Readiness', difficulty: 'advanced' as const, topicOffset: 4 },
+    ];
+
+    const buildMonth = (monthIdx: number): any => {
+      const phase = phaseLabels[Math.min(monthIdx, phaseLabels.length - 1)];
+      const t = (i: number) => coreTopics[(phase.topicOffset + i) % coreTopics.length];
+      const r = (i: number) => learningResources[i % learningResources.length];
+      const monthNum = monthIdx + 1;
+
+      const weekTitles = [
+        `${t(0)} Deep Dive`,
+        `${t(1)} Mastery`,
+        `${t(2)} Integration`,
+        `Real-World Project & Portfolio`,
+      ];
+
+      return {
+        monthNumber: monthNum,
+        title: `Month ${monthNum}: ${phase.label} — ${t(0)} & ${t(1)}`,
+        description: monthIdx === 0
+          ? `Build the foundations for becoming a ${goal}. ${hasSkills ? `You already know: ${userSkillsLabel}. We'll build on these.` : 'Starting fresh — we cover everything from the basics up.'}`
+          : `Month ${monthNum} takes you deeper into ${t(0)} and ${t(1)}, building on what you learned in previous months. Focus shifts to ${phase.label.toLowerCase()} skills essential for a professional ${goal} role.`,
+        weeks: [
+          // Week 1
+          {
+            weekNumber: 1,
+            title: `Week 1: ${weekTitles[0]}`,
+            description: `Focus on ${t(0)} — the primary skill of Month ${monthNum}. ${monthIdx === 0 ? 'Set up your environment and write your first programs.' : 'Push beyond basics into production-grade patterns.'}`,
+            learningGoals: [
+              `Master core ${t(0)} concepts relevant to ${goal}`,
+              `Build hands-on projects using ${t(0)}`,
+              `Understand how ${t(0)} is used in professional ${goal} environments`,
+            ],
+            dailyTasks: [
+              makeDay(1, `${t(0)} — ${monthIdx === 0 ? 'Introduction & Setup' : 'Advanced Patterns'}`,
+                `${monthIdx === 0 ? `Overview of ${t(0)} and why it matters for ${goal}. Install tools and set up your dev environment.` : `Dive into advanced ${t(0)} patterns used in real ${goal} production systems.`}`,
+                `${monthIdx === 0 ? `Write a "Hello World" and experiment with basic ${t(0)} syntax.` : `Implement an advanced ${t(0)} pattern end-to-end.`}`,
+                [r(0), r(1)]),
+              makeDay(2, `${t(0)} — Core Concepts`,
+                `Study the core building blocks of ${t(0)}: syntax, patterns, and best practices.`,
+                `Build 3 progressively complex examples using ${t(0)}.`,
+                [r(0)]),
+              makeDay(3, `${t(0)} in ${goal} Context`,
+                `Understand how ${t(0)} is applied specifically in ${goal} workflows and production apps.`,
+                `Build a real feature using ${t(0)} that mirrors a production ${goal} task.`,
+                [r(1)]),
+              makeDay(4, `${t(0)} — Error Handling & Testing`,
+                `Learn debugging techniques and write robust tests for your ${t(0)} code.`,
+                `Write 3 unit tests covering happy path, edge cases, and error paths.`,
+                [r(2)]),
+              makeDay(5, `${t(0)} — Performance & Optimization`,
+                `Profile and optimize your ${t(0)} code for performance and scalability.`,
+                `Identify and fix one bottleneck in your code using profiling tools.`,
+                [r(1), r(2)]),
+              makeDay(6, `Week 1 Project: ${t(0)} Showcase`,
+                `Build a deployable mini-project demonstrating everything you learned this week about ${t(0)}.`,
+                `Create a runnable project, write its README, and push to GitHub.`,
+                [r(0), r(1)]),
+            ],
+            projects: [{
+              title: `${t(0)} Showcase App — Month ${monthNum}`,
+              description: `A focused project demonstrating ${t(0)} skills at the ${phase.difficulty} level in the ${goal} domain.`,
+              techStack: techStack.slice(0, 3),
+              difficulty: phase.difficulty,
+              estimatedHours: monthIdx === 0 ? 5 : 8,
+              folderStructure: `src/\n  ${t(0).toLowerCase().replace(/[^a-z0-9]/gi, '-')}/\n  index.js\nREADME.md`,
+              deploymentGuide: `Run locally. ${monthIdx > 0 ? `Deploy on ${goalConfig.deployTarget}.` : 'Test in browser or terminal.'}`,
+            }],
+          },
+          // Week 2
+          {
+            weekNumber: 2,
+            title: `Week 2: ${weekTitles[1]}`,
+            description: `Shift focus to ${t(1)}, building on Week 1. Learn ${t(1)} patterns and integrate them with ${t(0)}.`,
+            learningGoals: [
+              `Understand ${t(1)} architecture and core patterns`,
+              `Apply ${t(1)} in real ${goal} scenarios`,
+              `Combine ${t(0)} and ${t(1)} to build integrated features`,
+            ],
+            dailyTasks: [
+              makeDay(1, `${t(1)} — Overview & Architecture`,
+                `Introduction to ${t(1)}: its role in the ${goal} ecosystem and how it integrates with ${t(0)}.`,
+                `Set up a ${t(1)} project and trace data flow from input to output.`,
+                [r(1)]),
+              makeDay(2, `${t(1)} — Key Patterns`,
+                `Study the most important design patterns and conventions used in ${t(1)}.`,
+                `Implement 2 different ${t(1)} patterns in a sample project.`,
+                [r(2)]),
+              makeDay(3, `${t(1)} — Building Features`,
+                `Build real features using ${t(1)} that are representative of ${goal} daily work.`,
+                `Build a feature demonstrating ${t(1)} from scratch.`,
+                [r(0)]),
+              makeDay(4, `${t(1)} — Integration with ${t(0)}`,
+                `Combine ${t(0)} and ${t(1)} into a working system demonstrating how they interact.`,
+                `Build an integration layer that connects your ${t(0)} and ${t(1)} modules.`,
+                [r(1)]),
+              makeDay(5, `${t(1)} — Testing & Best Practices`,
+                `Write tests for your ${t(1)} features and apply industry best practices for clean code.`,
+                `Write integration tests covering the connection between ${t(0)} and ${t(1)}.`,
+                [r(2)]),
+              makeDay(6, `Week 2 Review & Mini Project`,
+                `Consolidate the week by building a small project that showcases ${t(0)} + ${t(1)} working together.`,
+                `Build, document, and push a mini-project combining this week's skills.`,
+                [r(0), r(2)]),
+            ],
+            projects: [{
+              title: `${t(0)} + ${t(1)} Integration App — Month ${monthNum}`,
+              description: `Demonstrates ${t(0)} and ${t(1)} working together in a ${goal} context.`,
+              techStack: techStack.slice(0, 4),
+              difficulty: phase.difficulty,
+              estimatedHours: monthIdx === 0 ? 6 : 9,
+              folderStructure: `src/\n  ${t(0).toLowerCase().replace(/[^a-z0-9]/gi, '-')}/\n  ${t(1).toLowerCase().replace(/[^a-z0-9]/gi, '-')}/\n  index.js`,
+              deploymentGuide: `Deploy on ${goalConfig.deployTarget}.`,
+            }],
+          },
+          // Week 3
+          {
+            weekNumber: 3,
+            title: `Week 3: ${weekTitles[2]}`,
+            description: `Integrate ${t(0)}, ${t(1)}, and ${t(2)} into a cohesive ${goal} skill set. Build production-quality systems.`,
+            learningGoals: [
+              `Understand ${t(2)} and its role in ${goal}`,
+              `Build a system integrating ${t(0)}, ${t(1)}, and ${t(2)}`,
+              `Apply code review and refactoring best practices`,
+            ],
+            dailyTasks: [
+              makeDay(1, `${t(2)} — Introduction`,
+                `Learn ${t(2)}: its architecture, key concepts, and where it fits into a ${goal} tech stack.`,
+                `Diagram a system architecture that uses ${t(0)}, ${t(1)}, and ${t(2)} together.`,
+                [r(0)]),
+              makeDay(2, `${t(2)} — Hands-On Building`,
+                `Implement core ${t(2)} features step by step.`,
+                `Build a ${t(2)} feature from scratch and connect it to existing modules.`,
+                [r(1)]),
+              makeDay(3, `${t(2)} — Advanced & Production Topics`,
+                `Go deeper into advanced ${t(2)} topics that appear in real ${goal} interviews and production systems.`,
+                `Implement one advanced ${t(2)} pattern (e.g., caching, pagination, or event-driven logic).`,
+                [r(2)]),
+              makeDay(4, `Full Integration: ${t(0)} + ${t(1)} + ${t(2)}`,
+                `Build an end-to-end feature that exercises all three skill areas together.`,
+                `Build and test a full feature flowing through ${t(0)}, ${t(1)}, and ${t(2)}.`,
+                [r(0)]),
+              makeDay(5, `Code Review & Refactoring`,
+                `Review your integrated code and refactor it to be clean, efficient, and production-ready.`,
+                `Identify 3 code smells, refactor them, and run your test suite.`,
+                [r(1)]),
+              makeDay(6, `Documentation & Portfolio`,
+                `Document your work and prepare it for your portfolio.`,
+                `Write a detailed README and record a short demo video of your project.`,
+                [r(2)]),
+            ],
+            projects: [{
+              title: `${goal} Full-Stack Integration — Month ${monthNum}`,
+              description: `A complete application integrating ${t(0)}, ${t(1)}, and ${t(2)} at the ${phase.difficulty} level.`,
+              techStack: techStack.slice(0, 5),
+              difficulty: phase.difficulty,
+              estimatedHours: monthIdx === 0 ? 8 : 10,
+              folderStructure: `src/\n  modules/\n  services/\n  utils/\n  main.js`,
+              deploymentGuide: `Deploy on ${goalConfig.deployTarget} with environment variables configured.`,
+            }],
+          },
+          // Week 4
+          {
+            weekNumber: 4,
+            title: `Week 4: ${weekTitles[3]}`,
+            description: `Capstone week: build a complete, deployable ${goal} project that showcases all Month ${monthNum} skills. Polish, deploy, and add to your portfolio.`,
+            learningGoals: [
+              `Build a complete, deployable ${goal} project`,
+              'Master CI/CD and deployment workflows',
+              'Prepare portfolio-ready deliverables',
+            ],
+            dailyTasks: [
+              makeDay(1, 'Project Planning & Specification',
+                `Plan your Month ${monthNum} capstone: define features, user stories, and architecture using skills you've built this month.`,
+                `Write a project spec with 5 user stories and a system architecture diagram.`,
+                [r(0)]),
+              makeDay(2, 'Repository Setup & CI/CD',
+                `Initialise your project repo, configure linting, and set up a CI/CD pipeline.`,
+                `Create the repo, add ESLint/Prettier, and configure GitHub Actions.`,
+                [r(1)]),
+              makeDay(3, 'Core Feature Implementation',
+                `Build the primary features of your capstone using ${t(0)}, ${t(1)}, and ${t(2)}.`,
+                `Implement 2 core features end-to-end with tests.`,
+                [r(0), r(2)]),
+              makeDay(4, 'UI/UX, Styling & Accessibility',
+                `Polish the user interface, ensure mobile responsiveness, and meet basic accessibility standards.`,
+                `Implement responsive layout, dark/light mode toggle, and keyboard navigation.`,
+                [r(1)]),
+              makeDay(5, 'Deployment, Monitoring & QA',
+                `Deploy your capstone live, set up monitoring, and run end-to-end QA testing.`,
+                `Deploy to ${goalConfig.deployTarget}, verify all routes/features, fix any production bugs.`,
+                [r(2)]),
+              makeDay(6, 'Portfolio Update & Retrospective',
+                `Update your portfolio, LinkedIn, and GitHub with the new project. Write a month retrospective.`,
+                `Add the project to your portfolio with a case study, screenshots, and live demo link.`,
+                [r(0)]),
+            ],
+            projects: [{
+              title: `Month ${monthNum} Capstone: ${goal} — ${phase.label}`,
+              description: `A complete, production-grade ${goal} project showcasing ${phase.label} skills: ${techStack.join(', ')}.`,
+              techStack,
+              difficulty: phase.difficulty,
+              estimatedHours: 12,
+              folderStructure: `src/\n  pages/\n  components/\n  api/\n  utils/\n.github/workflows/\nREADME.md`,
+              deploymentGuide: `Deploy on ${goalConfig.deployTarget} with CI/CD pipeline via GitHub Actions.`,
+            }],
+          },
+        ],
+      };
+    };
+
+    const timeline = Array.from({ length: targetDuration }, (_, i) => buildMonth(i));
+
     return {
       title: `${goal} Career Roadmap`,
       targetRole: goal,
       difficulty,
-      estimatedDuration: '4 Months',
+      estimatedDuration: `${targetDuration} Month${targetDuration !== 1 ? 's' : ''}`,
       skillsCovered: [...new Set([...coreTopics.slice(0, 6), ...(hasSkills ? skills : [])])],
-      timeline: [
-        {
-          monthNumber: 1,
-          title: `Month 1: ${goalConfig.month1Title}`,
-          description: `Build the foundations for becoming a ${goal}. ${hasSkills ? `You already know: ${userSkillsLabel}. We'll build on these.` : 'Starting fresh — we cover everything from the basics up.'}`,
-          weeks: [
-            {
-              weekNumber: 1,
-              title: `Week 1: ${coreTopics[0]} Fundamentals`,
-              description: `Deep dive into ${coreTopics[0]} as the foundation for your ${goal} path.`,
-              learningGoals: [
-                `Understand the core concepts of ${coreTopics[0]}`,
-                `Set up your development environment`,
-                'Write and run your first programs',
-              ],
-              dailyTasks: [
-                makeDay(1, `Introduction to ${coreTopics[0]}`, `Overview of ${coreTopics[0]} and why it matters for ${goal}. Install tools and set up your dev environment.`, `Write a "Hello World" program and experiment with basic syntax in ${coreTopics[0]}.`, [learningResources[0], learningResources[1]]),
-                makeDay(2, `${coreTopics[0]} Core Syntax`, `Study variables, data types, operators, and control flow in ${coreTopics[0]}.`, `Write 5 small programs using conditionals and loops.`, [learningResources[0]]),
-                makeDay(3, `Functions & Modules in ${coreTopics[0]}`, `Learn how to structure reusable functions and organize code into modules.`, `Build a calculator module with add, subtract, multiply, divide functions.`, [learningResources[1]]),
-                makeDay(4, `Data Structures for ${goal}`, `Explore arrays, objects/maps and when to use each for building ${goal} applications.`, `Implement a student grade tracker using arrays and objects.`, [learningResources[2]]),
-                makeDay(5, `Problem Solving with ${coreTopics[0]}`, `Practice debugging and solving algorithmic problems relevant to your career path.`, `Solve 3 easy problems on LeetCode or HackerRank using ${coreTopics[0]}.`, [learningResources[2]]),
-                makeDay(6, `Mini Project: ${goalConfig.week1Project.title}`, goalConfig.week1Project.description, goalConfig.week1Project.practice, [learningResources[0], learningResources[1]]),
-              ],
-              projects: [{
-                title: goalConfig.week1Project.title,
-                description: goalConfig.week1Project.description,
-                techStack: techStack.slice(0, 2),
-                difficulty: 'beginner',
-                estimatedHours: 5,
-                folderStructure: goalConfig.week1Project.folderStructure,
-                deploymentGuide: 'Run locally and test in browser or terminal.',
-              }],
-            },
-            {
-              weekNumber: 2,
-              title: `Week 2: ${coreTopics[1]}`,
-              description: `Master ${coreTopics[1]} which is essential for the ${goal} role.`,
-              learningGoals: [`Apply ${coreTopics[1]} in real projects`, 'Understand best practices', 'Handle common use cases'],
-              dailyTasks: [
-                makeDay(1, `${coreTopics[1]} Overview`, `Introduction to ${coreTopics[1]}: what it is, why it's used, and where it fits in the ${goal} ecosystem.`, `Set up a sample project and write basic ${coreTopics[1]} code.`, [learningResources[1]]),
-                makeDay(2, `Core ${coreTopics[1]} Patterns`, `Learn the most important patterns and techniques used in ${coreTopics[1]}.`, `Implement 2 design patterns relevant to ${coreTopics[1]}.`, [learningResources[2]]),
-                makeDay(3, `${coreTopics[1]} in ${goal} context`, `See how ${coreTopics[1]} is used specifically in real-world ${goal} applications.`, `Build a feature using ${coreTopics[1]} that you'd find in a production ${goal} app.`, [learningResources[0]]),
-                makeDay(4, `Debugging & Best Practices`, `Learn how to debug ${coreTopics[1]} code and follow industry best practices.`, `Debug a broken ${coreTopics[1]} snippet and fix all errors.`, [learningResources[1]]),
-                makeDay(5, `Testing ${coreTopics[1]} Code`, `Write unit tests for your ${coreTopics[1]} components/modules.`, `Write 3 unit tests for functions you built earlier this week.`, [learningResources[2]]),
-                makeDay(6, `Review & Consolidation`, `Review the week's concepts and build a small integration project.`, `Combine ${coreTopics[0]} and ${coreTopics[1]} in a single mini app.`, [learningResources[0], learningResources[2]]),
-              ],
-              projects: [{
-                title: `${coreTopics[1]} Practice App`,
-                description: `A hands-on application demonstrating your ${coreTopics[1]} skills in the context of ${goal}.`,
-                techStack: techStack.slice(0, 3),
-                difficulty,
-                estimatedHours: 6,
-                folderStructure: `src/\n  ${coreTopics[1].toLowerCase().replace(/\s+/g, '-')}/\n  index.js`,
-                deploymentGuide: 'Deploy on Vercel or Netlify for free.',
-              }],
-            },
-            {
-              weekNumber: 3,
-              title: `Week 3: ${coreTopics[2]}`,
-              description: `Deep dive into ${coreTopics[2]}, a core skill required for every ${goal}.`,
-              learningGoals: [`Understand ${coreTopics[2]} architecture`, `Build real ${coreTopics[2]} features`, 'Integrate with previous skills'],
-              dailyTasks: [
-                makeDay(1, `${coreTopics[2]} Architecture`, `Understand how ${coreTopics[2]} is structured and how it's used in production ${goal} systems.`, `Diagram the architecture of a system using ${coreTopics[2]}.`, [learningResources[0]]),
-                makeDay(2, `Building with ${coreTopics[2]}`, `Hands-on: implement ${coreTopics[2]} features step-by-step.`, `Build a feature that uses ${coreTopics[2]} from scratch.`, [learningResources[1]]),
-                makeDay(3, `${coreTopics[2]} Advanced Topics`, `Go deeper into advanced ${coreTopics[2]} topics that appear in real interviews and jobs.`, `Implement 1 advanced ${coreTopics[2]} pattern used in production.`, [learningResources[2]]),
-                makeDay(4, `Integration Project`, `Combine ${coreTopics[0]}, ${coreTopics[1]}, and ${coreTopics[2]} into an integrated mini-app.`, `Build a mini ${goal} project integrating all 3 topics covered so far.`, [learningResources[0]]),
-                makeDay(5, `Code Review & Refactoring`, `Review the code from this week and refactor it to be clean and production-ready.`, `Refactor your integration project following best practices.`, [learningResources[1]]),
-                makeDay(6, `Portfolio Documentation`, `Write a clear README for your project and document your learnings.`, `Write a professional README.md with setup steps, features, and screenshots.`, [learningResources[2]]),
-              ],
-              projects: [{
-                title: `${goal} Integration Project`,
-                description: `A complete mini application that demonstrates ${coreTopics[0]}, ${coreTopics[1]}, and ${coreTopics[2]} working together.`,
-                techStack: techStack.slice(0, 4),
-                difficulty,
-                estimatedHours: 8,
-                folderStructure: `src/\n  components/\n  utils/\n  main.js`,
-                deploymentGuide: `Deploy on ${goalConfig.deployTarget}.`,
-              }],
-            },
-            {
-              weekNumber: 4,
-              title: 'Week 4: Real-World Projects & Portfolio',
-              description: `Build your portfolio project: a complete, deployable ${goal} application.`,
-              learningGoals: ['Build a full end-to-end project', 'Learn deployment best practices', 'Create portfolio-ready work'],
-              dailyTasks: [
-                makeDay(1, 'Project Planning', `Plan your capstone ${goal} project: define features, user stories, and tech stack.`, `Write a project specification document with 5 user stories.`, [learningResources[0]]),
-                makeDay(2, 'Project Setup & Architecture', `Set up your project repository, structure, and CI/CD pipeline.`, `Initialize the repo, configure linting, and set up folder structure.`, [learningResources[1]]),
-                makeDay(3, 'Core Features Implementation', `Build the primary features of your ${goal} capstone project.`, `Implement 2 core features with tests.`, [learningResources[0], learningResources[2]]),
-                makeDay(4, 'UI/UX & Styling', `Polish the user interface and ensure a professional look.`, `Implement responsive design and smooth UI interactions.`, [learningResources[1]]),
-                makeDay(5, 'Deployment & Testing', `Deploy your project live and run end-to-end tests.`, `Deploy to ${goalConfig.deployTarget} and test all features.`, [learningResources[2]]),
-                makeDay(6, 'Portfolio & LinkedIn Update', `Update your portfolio site and LinkedIn with your new project.`, `Write a project case study for your portfolio with screenshots and live link.`, [learningResources[0]]),
-              ],
-              projects: [{
-                title: `${goal} Capstone Project`,
-                description: `A full, portfolio-ready project demonstrating your ${goal} skills using: ${techStack.join(', ')}.`,
-                techStack,
-                difficulty: 'intermediate',
-                estimatedHours: 12,
-                folderStructure: `src/\n  pages/\n  components/\n  api/\n  utils/\nREADME.md`,
-                deploymentGuide: `Deploy on ${goalConfig.deployTarget} with CI/CD pipeline.`,
-              }],
-            },
-          ],
-        },
-      ],
+      timeline,
     };
   }
 
